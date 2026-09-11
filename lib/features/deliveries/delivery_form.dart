@@ -8,10 +8,10 @@ import '../../core/widgets/segment.dart';
 import '../../core/widgets/segmented_button.dart';
 import '../../core/widgets/date_textfield.dart';
 import '../clients/client_repository.dart';
-import '../auth/motorista_service.dart';
+import '../auth/data/datasources/usuario_remote_datasource.dart';
 import 'entrega_service.dart';
 import '../clients/cliente.dart';
-import '../auth/usuario.dart';
+import '../auth/domain/entities/usuario.dart';
 
 class DeliveryForm extends StatefulWidget {
   const DeliveryForm({super.key});
@@ -53,7 +53,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
   }
 
   Future<void> _carregarDados() async {
-    final motoristas = await MotoristaService().buscarMotoristas();
+    final motoristas = await UsuarioRemoteDataSource().buscarMotoristas();
     final clientes = await ClientRepository().buscarClientes();
     
     setState(() {

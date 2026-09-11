@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../features/auth/auth_service.dart';
+
+import '../../core/di/injection_container.dart';
+import '../../features/auth/domain/repositories/auth_repository.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -21,7 +23,10 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
-            await AuthService().signOut();
+            if (!getIt.isRegistered<AuthRepository>()) {
+              setupDependencies();
+            }
+            await getIt<AuthRepository>().signOut();
           },
           tooltip: 'Sair',
         ),
