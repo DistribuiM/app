@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/usuario.dart';
+import 'usuario.dart';
 
 class MotoristaService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;

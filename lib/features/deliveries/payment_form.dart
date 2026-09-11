@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
-import '../components/custom_appbar.dart'; 
-import '../components/seletor_imagem.dart'; 
+import '../../core/widgets/custom_appbar.dart'; 
+import '../../core/widgets/seletor_imagem.dart'; 
 
 class PaymentForm extends StatefulWidget {
   const PaymentForm({super.key});

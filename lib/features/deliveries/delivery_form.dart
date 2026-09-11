@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../components/seletor_imagem.dart';
-import '../components/custom_appbar.dart';
-import '../components/dropdown.dart';
-import '../components/input.dart';
-import '../components/segment.dart';
-import '../components/segmented_button.dart';
-import '../components/date_textfield.dart';
-import '../../services/client_repository.dart';
-import '../../services/motorista_service.dart';
-import '../../services/entrega_service.dart';
-import '../../models/cliente.dart';
-import '../../models/usuario.dart';
+import '../../core/widgets/seletor_imagem.dart';
+import '../../core/widgets/custom_appbar.dart';
+import '../../core/widgets/dropdown.dart';
+import '../../core/widgets/input.dart';
+import '../../core/widgets/segment.dart';
+import '../../core/widgets/segmented_button.dart';
+import '../../core/widgets/date_textfield.dart';
+import '../clients/client_repository.dart';
+import '../auth/motorista_service.dart';
+import 'entrega_service.dart';
+import '../clients/cliente.dart';
+import '../auth/usuario.dart';
 
 class DeliveryForm extends StatefulWidget {
   const DeliveryForm({super.key});

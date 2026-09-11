@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../services/client_repository.dart';
-import '../pages/delivery_form.dart';
-import '../pages/client_details.dart';
-import '../../models/cliente.dart';
+import 'client_repository.dart';
+import '../deliveries/delivery_form.dart';
+import 'client_details.dart';
+import 'cliente.dart';
 
 class ClientList extends StatefulWidget {
   const ClientList({super.key});

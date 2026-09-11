@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../components/custom_appbar.dart';
-import '../components/dropdown.dart';
-import '../components/input.dart';
-import '../components/checkbox.dart';
-import '../../services/client_repository.dart';
+import '../../core/widgets/custom_appbar.dart';
+import '../../core/widgets/dropdown.dart';
+import '../../core/widgets/input.dart';
+import '../../core/widgets/checkbox.dart';
+import 'client_repository.dart';
 
 class ClientForm extends StatefulWidget {
   const ClientForm({super.key});

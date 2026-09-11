@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../services/entrega_service.dart';
-import '../components/custom_appbar.dart';
-import '../../models/cliente.dart';
-import '../../models/entrega.dart';
+import '../deliveries/entrega_service.dart';
+import '../../core/widgets/custom_appbar.dart';
+import 'cliente.dart';
+import '../deliveries/entrega.dart';
 
 class ClientePage extends StatefulWidget {
   final Cliente cliente;

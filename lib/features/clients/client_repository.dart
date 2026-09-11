@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/cliente.dart';
+import 'cliente.dart';
 
 class ClientRepository {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -62,7 +62,7 @@ class ClientRepository {
       final querySnapshot = await _db.collection('clientes').get();
   
       return querySnapshot.docs.map((doc) {
-      return Cliente.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+      return Cliente.fromMap(doc.data(), doc.id);
     }).toList();
     } catch (erro) {
       print("Erro ao buscar clientes: $erro");

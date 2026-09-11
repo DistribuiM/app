@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart'
     show kIsWeb, defaultTargetPlatform, TargetPlatform;
 import 'package:google_sign_in/google_sign_in.dart';
 
-import '../config/app_config.dart';
+import '../../config/app_config.dart';
 
 class AuthService {
   String getGoogleSignInClientId() {

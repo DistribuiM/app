@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/entrega.dart';
+import 'entrega.dart';
 
 class EntregaService {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -61,7 +61,7 @@ class EntregaService {
   Stream<List<Entrega>> ouvirEntregas() {
     return _db.collection('entregas').snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
-        return Entrega.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+        return Entrega.fromMap(doc.data(), doc.id);
       }).toList();
     });
   }
@@ -90,7 +90,7 @@ class EntregaService {
       .snapshots()
       .map((snapshot) {
         return snapshot.docs.map((doc) {
-          return Entrega.fromMap(doc.data() as Map<String, dynamic>, doc.id);
+          return Entrega.fromMap(doc.data(), doc.id);
         }).toList();
       });
   }

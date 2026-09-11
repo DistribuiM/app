@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../services/entrega_service.dart';
-import '../../models/entrega.dart';
+import 'entrega_service.dart';
+import 'entrega.dart';
 
 class DeliveryList extends StatefulWidget {
   const DeliveryList({super.key});
