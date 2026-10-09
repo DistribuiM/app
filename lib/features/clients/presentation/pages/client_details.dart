@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../../deliveries/data/datasources/delivery_remote_data_source.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../domain/entities/cliente.dart';
-import '../../../deliveries/domain/entities/entrega.dart';
+import '../../../deliveries/presentation/widgets/client_deliveries_section.dart';
 
 class ClientePage extends StatefulWidget {
   final Cliente cliente;
@@ -14,8 +13,6 @@ class ClientePage extends StatefulWidget {
 }
 
 class _ClientePageState extends State<ClientePage> {
-  final DeliveryRemoteDataSource _entregaService = DeliveryRemoteDataSource();
-
   @override
   Widget build(BuildContext context) {
     final cliente = widget.cliente;
@@ -30,7 +27,6 @@ class _ClientePageState extends State<ClientePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-
               // Nome do cliente
               const _Label(text: "Cliente"),
               Row(
@@ -42,7 +38,10 @@ class _ClientePageState extends State<ClientePage> {
                       const SizedBox(width: 8),
                       Text(
                         cliente.nome,
-                        style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
@@ -116,95 +115,24 @@ class _ClientePageState extends State<ClientePage> {
                       const SizedBox(width: 8),
                       Text(
                         cliente.nomeMotoristaResp,
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ],
                   ),
-                  Icon(Icons.arrow_forward_ios, color: Colors.grey[600], size: 18),
+                  Icon(
+                    Icons.arrow_forward_ios,
+                    color: Colors.grey[600],
+                    size: 18,
+                  ),
                 ],
               ),
               const SizedBox(height: 24),
               const Divider(),
 
-              // Tabela de entregas
-              StreamBuilder<List<Entrega>>(
-                stream: _entregaService.ouvirEntregasDoCliente(cliente.id),
-                builder: (context, snapshot) {
-                  if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Center(child: CircularProgressIndicator(color: Colors.green));
-                  }
-
-                  if (snapshot.hasError) {
-                    return const Text("Erro ao carregar entregas", style: TextStyle(color: Colors.red));
-                  }
-
-                  final todasEntregas = snapshot.data ?? [];
-                  final ultimas5 = todasEntregas.take(5).toList();
-
-                  return Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Text(
-                            "Entregas",
-                            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                          ),
-                          const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: Colors.grey[300],
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: Text(
-                              "${todasEntregas.length}",
-                              style: const TextStyle(fontSize: 14),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 12),
-
-                      SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: DataTable(
-                          headingRowColor: WidgetStatePropertyAll(Colors.grey[100]),
-                          columns: const [
-                            DataColumn(label: Text("Data", style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text("Qtd.", style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text("Valor Pago", style: TextStyle(fontWeight: FontWeight.bold))),
-                            DataColumn(label: Text("Pendente", style: TextStyle(fontWeight: FontWeight.bold))),
-                          ],
-                          rows: ultimas5.map((entrega) {
-                            return DataRow(cells: [
-                              DataCell(Text(entrega.dataEntrega)),
-                              DataCell(Text("${entrega.quantidadeSacos}")),
-                              DataCell(Text(
-                                "R\$${entrega.valorPago.toStringAsFixed(2)}",
-                                style: TextStyle(color: entrega.pago ? Colors.green[700] : Colors.red[700]),
-                              )),
-                              DataCell(Text(
-                                "R\$${entrega.valorPendente.toStringAsFixed(2)}",
-                                style: TextStyle(color: entrega.pago ? Colors.green[700] : Colors.red[700]),
-                              )),
-                            ]);
-                          }).toList(),
-                        ),
-                      ),
-
-                      if (todasEntregas.length > 5)
-                        TextButton(
-                          onPressed: () {}, // redirecionar para tela de entregas filtrada
-                          child: Text(
-                            "Ver mais",
-                            style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                    ],
-                  );
-                },
-              ),
+              ClientDeliveriesSection(idCliente: cliente.id),
             ],
           ),
         ),

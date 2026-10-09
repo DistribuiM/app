@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/seletor_imagem.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/dropdown.dart';
@@ -7,11 +9,10 @@ import '../../../../core/widgets/input.dart';
 import '../../../../core/widgets/segment.dart';
 import '../../../../core/widgets/segmented_button.dart';
 import '../../../../core/widgets/date_textfield.dart';
-import '../../../clients/data/datasources/client_remote_data_source.dart';
-import '../../../auth/data/datasources/usuario_remote_datasource.dart';
-import '../../data/datasources/delivery_remote_data_source.dart';
 import '../../../clients/domain/entities/cliente.dart';
 import '../../../auth/domain/entities/usuario.dart';
+import '../cubit/delivery_form_cubit.dart';
+import '../cubit/delivery_form_state.dart';
 
 class DeliveryForm extends StatefulWidget {
   const DeliveryForm({super.key});
@@ -21,8 +22,6 @@ class DeliveryForm extends StatefulWidget {
 }
 
 class _DeliveryFormState extends State<DeliveryForm> {
-  final DeliveryRemoteDataSource _service = DeliveryRemoteDataSource();
-   
   final List<Segment> segments = const [
     Segment(value: 0, label : 'Entrega de Milho', icon: Icons.local_shipping),
     Segment(value: 1, label : 'Pagamento', icon: Icons.attach_money),
@@ -33,10 +32,6 @@ class _DeliveryFormState extends State<DeliveryForm> {
   final _valorPagoController = TextEditingController();
   final _observacaoController = TextEditingController();
   
-  List<Usuario> _motoristas = []; 
-  List<Cliente> _clientes = [];
-  bool _carregando = true;
-
   // Campos
   String? _dataEntrega;
   Usuario? _motoristaSelecionado;
@@ -44,25 +39,6 @@ class _DeliveryFormState extends State<DeliveryForm> {
   int _precoUnitario = 80;
   bool _clientePagou = false;
   int _formaPagamento = 0; // 0=Dinheiro, 1=Pix, 2=Cartão
-  bool _salvando = false;
-  
-  @override
-  void initState() {
-    super.initState();
-    _carregarDados();
-  }
-
-  Future<void> _carregarDados() async {
-    final motoristas = await UsuarioRemoteDataSource().buscarMotoristas();
-    final clientes = await ClientRemoteDataSource().buscarClientes();
-    
-    setState(() {
-      _motoristas = motoristas;
-      _clientes = clientes;
-      _carregando = false;
-    });
-  }
-
   @override
   void dispose() {
     _quantidadeController.dispose();
@@ -73,7 +49,33 @@ class _DeliveryFormState extends State<DeliveryForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return BlocProvider<DeliveryFormCubit>(
+      create: (_) => getIt<DeliveryFormCubit>()..carregarDados(),
+      child: BlocConsumer<DeliveryFormCubit, DeliveryFormState>(
+        listener: (context, state) {
+          if (state is DeliveryFormSuccess) {
+            Navigator.pop(context);
+          } else if (state is DeliveryFormError) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(state.message)),
+            );
+          }
+        },
+        builder: (context, state) {
+          final carregando = state is DeliveryFormLoading;
+          final motoristas = state is DeliveryFormLoaded
+              ? state.motoristas
+              : state is DeliveryFormSubmitting
+                  ? state.motoristas
+                  : <Usuario>[];
+          final clientes = state is DeliveryFormLoaded
+              ? state.clientes
+              : state is DeliveryFormSubmitting
+                  ? state.clientes
+                  : <Cliente>[];
+          final salvando = state is DeliveryFormSubmitting;
+
+          return Scaffold(
       appBar: const CustomAppBar(title: 'Cadastro de Entrega', leading: true),
       backgroundColor: const Color(0xFFF7F8F5),
       body: SafeArea(
@@ -91,28 +93,28 @@ class _DeliveryFormState extends State<DeliveryForm> {
               ),
               const SizedBox(height: 20),
 
-              _carregando
+              carregando
                 ? const Center(child: CircularProgressIndicator(color: Colors.green))
                 : Dropdown(
-                    options: _motoristas.map((m) => m.nome).toList(),
+                    options: motoristas.map((m) => m.nome).toList(),
                     hintText: "Motorista*",
                     onChanged: (nome) {
-                      final index = _motoristas.indexWhere((m) => m.nome == nome);
-                      setState(() => _motoristaSelecionado = index != -1 ? _motoristas[index] : null);
+                      final index = motoristas.indexWhere((m) => m.nome == nome);
+                      setState(() => _motoristaSelecionado = index != -1 ? motoristas[index] : null);
                     },
                   ),
               const SizedBox(height: 20),
               
-              _carregando
+              carregando
                 ? const SizedBox.shrink()
                 : Dropdown(
-                  options: _clientes.map((c) => "${c.nome} - ${c.endereco.cidade}").toList(),
+                  options: clientes.map((c) => "${c.nome} - ${c.endereco.cidade}").toList(),
                   hintText: "Cliente*",
                   onChanged: (valor) {
-                    final index = _clientes.indexWhere((c) =>
+                    final index = clientes.indexWhere((c) =>
                       "${c.nome} - ${c.endereco.cidade}" == valor
                     );
-                    setState(() => _clienteSelecionado = index != -1 ? _clientes[index] : null);
+                    setState(() => _clienteSelecionado = index != -1 ? clientes[index] : null);
                   },
                 ),
               const SizedBox(height: 20),
@@ -199,7 +201,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
               backgroundColor: const Color(0xFF4D7C42),
               foregroundColor: Colors.white,
             ),
-            onPressed: _salvando ? null : () async { 
+            onPressed: salvando ? null : () async {
               if (_dataEntrega == null || _motoristaSelecionado == null || _clienteSelecionado == null || _quantidadeController.text.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(content: Text("Preencha todos os campos obrigatórios!")),
@@ -213,9 +215,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
               final valorPendente = valorTotal - valorPago;
               final formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
 
-              setState(() => _salvando = true);
-
-              await _service.registrarEntrega(
+              await context.read<DeliveryFormCubit>().registrarEntrega(
                 dataEntrega: _dataEntrega!,
                 idMotorista: _motoristaSelecionado!.id,
                 nomeMotorista: _motoristaSelecionado!.nome,
@@ -231,16 +231,16 @@ class _DeliveryFormState extends State<DeliveryForm> {
                 entregue: true,
                 observacao: _observacaoController.text
               );
-
-              setState(() => _salvando = false);
-              if (context.mounted) Navigator.pop(context);
             },
 
-            child: _salvando
+            child: salvando
                 ? const CircularProgressIndicator(color: Colors.white)
                 : const Text('Salvar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600)),
           ),
         )
+      ),
+          );
+        },
       ),
     );
   }

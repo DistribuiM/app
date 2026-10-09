@@ -1,16 +1,13 @@
 import 'package:flutter/material.dart';
-import '../../data/datasources/delivery_remote_data_source.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/di/injection_container.dart';
 import '../../domain/entities/entrega.dart';
+import '../cubit/delivery_list_cubit.dart';
+import '../cubit/delivery_list_state.dart';
 
-class DeliveryList extends StatefulWidget {
+class DeliveryList extends StatelessWidget {
   const DeliveryList({super.key});
-
-  @override
-  State<DeliveryList> createState() => _DeliveryListState();
-}
-
-class _DeliveryListState extends State<DeliveryList> {
-  final DeliveryRemoteDataSource _service = DeliveryRemoteDataSource();
 
   // AGRUPA POR MOTORISTA
   Map<String, List<Entrega>> _agruparPorMotorista(List<Entrega> entregas) {
@@ -24,30 +21,30 @@ class _DeliveryListState extends State<DeliveryList> {
 
   @override
   Widget build(BuildContext context) {
-    // USA STREAM BUILDER PARA OUVIR SE TEVE ALTERACAO NO BANCO DE DADOS E ATUALIZA AUTOMATICAMENTE A TELA
-    return StreamBuilder<List<Entrega>>(
-      stream: _service.ouvirEntregas(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator(color: Colors.green));
-        }
+    return BlocProvider(
+      create: (_) => getIt<DeliveryListCubit>()..ouvirEntregas(),
+      child: BlocBuilder<DeliveryListCubit, DeliveryListState>(
+        builder: (context, state) {
+          if (state is DeliveryListLoading) {
+            return const Center(child: CircularProgressIndicator(color: Colors.green));
+          }
 
-        if (snapshot.hasError) {
+          if (state is DeliveryListError) {
           return const Center(child: Text("Erro ao carregar entregas", style: TextStyle(color: Colors.red)));
-        }
+          }
 
-        final entregas = snapshot.data ?? [];
+          final entregas = (state as DeliveryListLoaded).entregas;
 
-        if (entregas.isEmpty) {
-          return const Center(child: Text("Nenhuma entrega registrada"));
-        }
+          if (entregas.isEmpty) {
+            return const Center(child: Text("Nenhuma entrega registrada"));
+          }
 
-        final agrupado = _agruparPorMotorista(entregas);
+          final agrupado = _agruparPorMotorista(entregas);
 
-        return ListView(
-          children: agrupado.entries.map((entry) {
-            final motorista = entry.key;
-            final entregasDoMotorista = entry.value;
+          return ListView(
+            children: agrupado.entries.map((entry) {
+              final motorista = entry.key;
+              final entregasDoMotorista = entry.value;
 
             return Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -111,9 +108,10 @@ class _DeliveryListState extends State<DeliveryList> {
                 const Divider(height: 1, thickness: 1, color: Color.fromARGB(120, 158, 158, 158)),
               ],
             );
-          }).toList(),
-        );
-      },
+            }).toList(),
+          );
+        },
+      ),
     );
   }
 }
