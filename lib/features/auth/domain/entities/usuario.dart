@@ -1,6 +1,6 @@
 enum CargoUsuario { motorista, admin }
 
-class Usuario {
+class Usuario{
   final String id;
   final String nome;
   final String email;
@@ -13,13 +13,14 @@ class Usuario {
     required this.cargo,
   });
 
-  factory Usuario.fromMap(Map<String, dynamic> data, String id) {
+  factory Usuario.fromMap(Map<String, dynamic> data, String id){
     String cargoString = data['cargo'] ?? 'motorista';
 
     CargoUsuario cargoMapeado;
-    if (cargoString == 'admin') {
-      cargoMapeado = CargoUsuario.admin;
-    } else {
+    if (cargoString == 'admin'){
+      cargoMapeado = CargoUsuario.admin; 
+    }
+    else {
       cargoMapeado = CargoUsuario.motorista;
     }
 
@@ -31,11 +32,12 @@ class Usuario {
     );
   }
 
-  Map<String, dynamic> toMap() {
-    return {
+  Map<String, dynamic> toMap(){
+    return{
       'nome': nome,
       'email': email,
       'cargo': cargo.name,
     };
   }
+
 }
