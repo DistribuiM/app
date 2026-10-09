@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'entrega.dart';
+import '../../domain/entities/entrega.dart';
 
-class EntregaService {
+class DeliveryRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> registrarEntrega({

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
-import '../../../deliveries/delivery_form.dart';
+import '../../../deliveries/presentation/pages/delivery_form.dart';
 import 'client_details.dart';
 import '../../domain/entities/cliente.dart';
 import '../cubit/client_list_cubit.dart';

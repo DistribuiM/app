@@ -3,9 +3,9 @@ import 'package:flutter/material.dart';
 import '../clients/presentation/pages/client_list.dart';
 import '../../core/widgets/custom_appbar.dart';
 import '../../core/widgets/custom_bottom_appbar.dart';
-import '../deliveries/delivery_list.dart';
+import '../deliveries/presentation/pages/delivery_list.dart';
 import '../clients/presentation/pages/client_form.dart';
-import '../deliveries/delivery_form.dart';
+import '../deliveries/presentation/pages/delivery_form.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.user});

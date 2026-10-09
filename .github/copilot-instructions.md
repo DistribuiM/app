@@ -29,8 +29,10 @@ deliveries. Cada feature em lib/features/<nome>/:
   data/repositories (implementa a interface do domain).
 - presentation/cubit, presentation/pages, presentation/widgets.
 
-Regras de dependência: presentation -> domain <- data. Uma feature nunca
-importa domain/data de outra feature. A feature home não tem lógica
+Regras de dependência: presentation -> domain <- data. Uma feature pode importar o domain de outra (entidades e interfaces de repository),
+nunca o data. Telas só compõem ou navegam para telas de outra feature nos casos já
+existentes: home monta as abas, client_details embute a seção de entregas do cliente
+e client_list abre o DeliveryForm. A feature home não tem lógica
 própria: apenas compõe as páginas de clients e deliveries nas abas.
 
 Código compartilhado fica em lib/core: di/, error/, widgets/ (componentes

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'entrega_service.dart';
-import 'entrega.dart';
+import '../../data/datasources/delivery_remote_data_source.dart';
+import '../../domain/entities/entrega.dart';
 
 class DeliveryList extends StatefulWidget {
   const DeliveryList({super.key});
@@ -10,7 +10,7 @@ class DeliveryList extends StatefulWidget {
 }
 
 class _DeliveryListState extends State<DeliveryList> {
-  final EntregaService _service = EntregaService();
+  final DeliveryRemoteDataSource _service = DeliveryRemoteDataSource();
 
   // AGRUPA POR MOTORISTA
   Map<String, List<Entrega>> _agruparPorMotorista(List<Entrega> entregas) {

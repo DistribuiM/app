@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../../deliveries/entrega_service.dart';
+import '../../../deliveries/data/datasources/delivery_remote_data_source.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../domain/entities/cliente.dart';
-import '../../../deliveries/entrega.dart';
+import '../../../deliveries/domain/entities/entrega.dart';
 
 class ClientePage extends StatefulWidget {
   final Cliente cliente;
@@ -14,7 +14,7 @@ class ClientePage extends StatefulWidget {
 }
 
 class _ClientePageState extends State<ClientePage> {
-  final EntregaService _entregaService = EntregaService();
+  final DeliveryRemoteDataSource _entregaService = DeliveryRemoteDataSource();
 
   @override
   Widget build(BuildContext context) {

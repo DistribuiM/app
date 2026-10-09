@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 
-import '../../core/widgets/seletor_imagem.dart';
-import '../../core/widgets/custom_appbar.dart';
-import '../../core/widgets/dropdown.dart';
-import '../../core/widgets/input.dart';
-import '../../core/widgets/segment.dart';
-import '../../core/widgets/segmented_button.dart';
-import '../../core/widgets/date_textfield.dart';
-import '../clients/data/datasources/client_remote_data_source.dart';
-import '../auth/data/datasources/usuario_remote_datasource.dart';
-import 'entrega_service.dart';
-import '../clients/domain/entities/cliente.dart';
-import '../auth/domain/entities/usuario.dart';
+import '../../../../core/widgets/seletor_imagem.dart';
+import '../../../../core/widgets/custom_appbar.dart';
+import '../../../../core/widgets/dropdown.dart';
+import '../../../../core/widgets/input.dart';
+import '../../../../core/widgets/segment.dart';
+import '../../../../core/widgets/segmented_button.dart';
+import '../../../../core/widgets/date_textfield.dart';
+import '../../../clients/data/datasources/client_remote_data_source.dart';
+import '../../../auth/data/datasources/usuario_remote_datasource.dart';
+import '../../data/datasources/delivery_remote_data_source.dart';
+import '../../../clients/domain/entities/cliente.dart';
+import '../../../auth/domain/entities/usuario.dart';
 
 class DeliveryForm extends StatefulWidget {
   const DeliveryForm({super.key});
@@ -21,7 +21,7 @@ class DeliveryForm extends StatefulWidget {
 }
 
 class _DeliveryFormState extends State<DeliveryForm> {
-  final EntregaService _service = EntregaService();
+  final DeliveryRemoteDataSource _service = DeliveryRemoteDataSource();
    
   final List<Segment> segments = const [
     Segment(value: 0, label : 'Entrega de Milho', icon: Icons.local_shipping),
