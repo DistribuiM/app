@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../core/widgets/custom_appbar.dart';
-import '../../core/widgets/dropdown.dart';
-import '../../core/widgets/input.dart';
-import '../../core/widgets/checkbox.dart';
-import 'client_repository.dart';
+import '../../../../core/widgets/custom_appbar.dart';
+import '../../../../core/widgets/dropdown.dart';
+import '../../../../core/widgets/input.dart';
+import '../../../../core/widgets/checkbox.dart';
+import '../../data/datasources/client_remote_data_source.dart';
 
 class ClientForm extends StatefulWidget {
   const ClientForm({super.key});
@@ -13,7 +13,7 @@ class ClientForm extends StatefulWidget {
 }
 class _ClientFormState extends State<ClientForm> {
   final List <String> _cities = ['Santos', 'São Vicente', 'Guarujá', 'Praia Grande', 'Cubatão', 'Bertioga', 'Mongaguá', 'Itanhaém'];
-  final ClientRepository _service = ClientRepository();
+  final ClientRemoteDataSource _service = ClientRemoteDataSource();
 
   // Controllers para pegar o texto de cada campo
   final _nomeController = TextEditingController();

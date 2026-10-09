@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'cliente.dart';
+import '../../domain/entities/cliente.dart';
 
-class ClientRepository {
+class ClientRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
   Future<void> registrarCliente({

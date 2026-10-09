@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'client_repository.dart';
-import '../deliveries/delivery_form.dart';
+import '../../data/datasources/client_remote_data_source.dart';
+import '../../../deliveries/delivery_form.dart';
 import 'client_details.dart';
-import 'cliente.dart';
+import '../../domain/entities/cliente.dart';
 
 class ClientList extends StatefulWidget {
   const ClientList({super.key});
@@ -12,7 +12,7 @@ class ClientList extends StatefulWidget {
 }
 
 class _ClientListState extends State<ClientList> {
-  final ClientRepository _service = ClientRepository();
+  final ClientRemoteDataSource _service = ClientRemoteDataSource();
 
   List<Cliente> _clientes = [];
   bool _carregando = true;
