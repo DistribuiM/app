@@ -1,19 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/dropdown.dart';
 import '../../../../core/widgets/input.dart';
 import '../../../../core/widgets/checkbox.dart';
-import '../../data/datasources/client_remote_data_source.dart';
+import '../cubit/client_form_cubit.dart';
+import '../cubit/client_form_state.dart';
 
 class ClientForm extends StatefulWidget {
   const ClientForm({super.key});
 
-  @override  
-  State<ClientForm> createState() => _ClientFormState();    
+  @override
+  State<ClientForm> createState() => _ClientFormState();
 }
+
 class _ClientFormState extends State<ClientForm> {
-  final List <String> _cities = ['Santos', 'São Vicente', 'Guarujá', 'Praia Grande', 'Cubatão', 'Bertioga', 'Mongaguá', 'Itanhaém'];
-  final ClientRemoteDataSource _service = ClientRemoteDataSource();
+  final List<String> _cities = [
+    'Santos',
+    'São Vicente',
+    'Guarujá',
+    'Praia Grande',
+    'Cubatão',
+    'Bertioga',
+    'Mongaguá',
+    'Itanhaém',
+  ];
 
   // Controllers para pegar o texto de cada campo
   final _nomeController = TextEditingController();
@@ -21,7 +34,6 @@ class _ClientFormState extends State<ClientForm> {
   final _telefoneController = TextEditingController();
   final _complementoController = TextEditingController();
   String? _cidadeSelecionada;
-  bool _salvando = false; 
 
   @override
   // Limpa os controllers
@@ -35,82 +47,124 @@ class _ClientFormState extends State<ClientForm> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(title: 'Cadastro de Cliente', leading: true),
-      backgroundColor: const Color(0xFFF7F8F5),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(36),
-          child: Column(
-            children: [
-              Input(label: 'Nome*', hintText: 'Digite o nome do cliente', controller: _nomeController),
-              const SizedBox(height: 20),
-              Input(label: 'Endereço*', hintText: 'Digite o endereço do cliente', controller: _enderecoController),
-              const SizedBox(height: 20),
-              Dropdown(options: _cities, hintText: 'Cidade*', onChanged: (valor) {setState(() => _cidadeSelecionada = valor); print('Cidade selecionada: $valor');}),
-              const SizedBox(height: 20),
-              Input(label: 'Telefone*', hintText: 'Digite o telefone do cliente', controller: _telefoneController),
-              const SizedBox(height: 20),
-              Input(label: 'Complemento ou ponto de referência', hintText: 'Digite o complemento ou ponto de referência do cliente', controller: _complementoController),
-              const SizedBox(height: 20),
-              CheckBox(label: "Permitir vendas a prazo para este cliente?")
-            ],
-          ),
-        ),
-      ),
-      bottomNavigationBar: SafeArea(
-        minimum: const EdgeInsets.all(16),
-        child: SizedBox(
-          width: double.infinity,
-          height: 54,
-          child: ElevatedButton(
-            style: ElevatedButton.styleFrom(
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(14),
+    return BlocProvider(
+      create: (_) => getIt<ClientFormCubit>(),
+      child: BlocConsumer<ClientFormCubit, ClientFormState>(
+        listener: (context, state) {
+          if (state is ClientFormSuccess) {
+            Navigator.pop(context);
+          } else if (state is ClientFormError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
+        },
+        builder: (context, state) {
+          final salvando = state is ClientFormSubmitting;
+
+          return Scaffold(
+            appBar: CustomAppBar(title: 'Cadastro de Cliente', leading: true),
+            backgroundColor: const Color(0xFFF7F8F5),
+            body: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(36),
+                child: Column(
+                  children: [
+                    Input(
+                      label: 'Nome*',
+                      hintText: 'Digite o nome do cliente',
+                      controller: _nomeController,
+                    ),
+                    const SizedBox(height: 20),
+                    Input(
+                      label: 'Endereço*',
+                      hintText: 'Digite o endereço do cliente',
+                      controller: _enderecoController,
+                    ),
+                    const SizedBox(height: 20),
+                    Dropdown(
+                      options: _cities,
+                      hintText: 'Cidade*',
+                      onChanged: (valor) {
+                        setState(() => _cidadeSelecionada = valor);
+                        print('Cidade selecionada: $valor');
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    Input(
+                      label: 'Telefone*',
+                      hintText: 'Digite o telefone do cliente',
+                      controller: _telefoneController,
+                    ),
+                    const SizedBox(height: 20),
+                    Input(
+                      label: 'Complemento ou ponto de referência',
+                      hintText:
+                          'Digite o complemento ou ponto de referência do cliente',
+                      controller: _complementoController,
+                    ),
+                    const SizedBox(height: 20),
+                    CheckBox(
+                      label: "Permitir vendas a prazo para este cliente?",
+                    ),
+                  ],
+                ),
               ),
-              backgroundColor: const Color(0xFF4D7C42),
-              foregroundColor: Colors.white,
             ),
-            onPressed: _salvando ? null : () async {
-              if (_nomeController.text.isEmpty || _telefoneController.text.isEmpty || _enderecoController.text.isEmpty || _cidadeSelecionada == null) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Preencha todos os campos obrigatórios! (*)"))
-                );
-                return;
-              }
-
-              setState(() {
-                _salvando = true;
-              });
-              
-              await _service.registrarCliente(
-                nome: _nomeController.text.trim(),
-                rua: _enderecoController.text.trim(),
-                complemento: _complementoController.text.trim(),
-                cidade: _cidadeSelecionada!,
-                telefone: _telefoneController.text.trim(),
-                idMotoristaResp: 'id_fixo_por_enquanto',
-                nomeMotoristaResp: 'nome_fixo_por_enquanto',
-              );
-
-              setState(() {
-                _salvando = false;
-              });
-
-              if (context.mounted) Navigator.pop(context);
-              
-            },
-            child: _salvando
-              ? const CircularProgressIndicator(color: Colors.white)
-              : const Text(
-                  'Salvar',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+            bottomNavigationBar: SafeArea(
+              minimum: const EdgeInsets.all(16),
+              child: SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                    backgroundColor: const Color(0xFF4D7C42),
+                    foregroundColor: Colors.white,
                   ),
-                )
-          ),
-        )
+                  onPressed: salvando
+                      ? null
+                      : () {
+                          if (_nomeController.text.isEmpty ||
+                              _telefoneController.text.isEmpty ||
+                              _enderecoController.text.isEmpty ||
+                              _cidadeSelecionada == null) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  "Preencha todos os campos obrigatórios! (*)",
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
+                          context.read<ClientFormCubit>().registrarCliente(
+                            nome: _nomeController.text.trim(),
+                            rua: _enderecoController.text.trim(),
+                            complemento: _complementoController.text.trim(),
+                            cidade: _cidadeSelecionada!,
+                            telefone: _telefoneController.text.trim(),
+                            idMotoristaResp: 'id_fixo_por_enquanto',
+                            nomeMotoristaResp: 'nome_fixo_por_enquanto',
+                          );
+                        },
+                  child: salvando
+                      ? const CircularProgressIndicator(color: Colors.white)
+                      : const Text(
+                          'Salvar',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

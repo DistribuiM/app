@@ -1,0 +1,21 @@
+import 'package:flutter_bloc/flutter_bloc.dart';
+
+import '../../domain/repositories/client_repository.dart';
+import 'client_list_state.dart';
+
+class ClientListCubit extends Cubit<ClientListState> {
+  ClientListCubit(this._clientRepository) : super(ClientListInitial());
+
+  final ClientRepository _clientRepository;
+
+  Future<void> carregarClientes() async {
+    emit(ClientListLoading());
+
+    try {
+      final clientes = await _clientRepository.buscarClientes();
+      emit(ClientListLoaded(clientes));
+    } catch (error) {
+      emit(ClientListError(error.toString().replaceFirst('Exception: ', '')));
+    }
+  }
+}

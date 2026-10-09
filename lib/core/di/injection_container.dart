@@ -1,5 +1,10 @@
 import 'package:get_it/get_it.dart';
 
+import '../../features/clients/data/datasources/client_remote_data_source.dart';
+import '../../features/clients/data/repositories/client_repository_impl.dart';
+import '../../features/clients/domain/repositories/client_repository.dart';
+import '../../features/clients/presentation/cubit/client_form_cubit.dart';
+import '../../features/clients/presentation/cubit/client_list_cubit.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/usuario_remote_datasource.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -19,6 +24,12 @@ void setupDependencies() {
     );
   }
 
+  if (!getIt.isRegistered<ClientRemoteDataSource>()) {
+    getIt.registerLazySingleton<ClientRemoteDataSource>(
+      () => ClientRemoteDataSource(),
+    );
+  }
+
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
@@ -28,7 +39,25 @@ void setupDependencies() {
     );
   }
 
+  if (!getIt.isRegistered<ClientRepository>()) {
+    getIt.registerLazySingleton<ClientRepository>(
+      () => ClientRepositoryImpl(getIt<ClientRemoteDataSource>()),
+    );
+  }
+
   if (!getIt.isRegistered<AuthCubit>()) {
     getIt.registerFactory<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
+  }
+
+  if (!getIt.isRegistered<ClientListCubit>()) {
+    getIt.registerFactory<ClientListCubit>(
+      () => ClientListCubit(getIt<ClientRepository>()),
+    );
+  }
+
+  if (!getIt.isRegistered<ClientFormCubit>()) {
+    getIt.registerFactory<ClientFormCubit>(
+      () => ClientFormCubit(getIt<ClientRepository>()),
+    );
   }
 }
