@@ -12,7 +12,9 @@ Login (Google) -> Home com 2 abas: Clientes e Entregas.
 - Usuario (id, nome, email, cargo): cargo é o enum CargoUsuario
   { motorista, admin }. Hoje todo usuário é motorista; admin é um papel
   futuro. Vive em features/auth/domain. No Firestore: coleção
-  'motoristas', com o e-mail como id do documento.
+  'motoristas', com o e-mail como id do documento. O conteúdo das telas
+  dependerá do cargo (motorista vs admin): telas leem o Usuario logado
+  via SessionCubit, não via FirebaseAuth.
 - Cliente.
 - Entrega: referencia o motorista apenas por campos simples
   (motoristaId, motoristaNome); NÃO importa Usuario de auth.
@@ -29,14 +31,17 @@ deliveries. Cada feature em lib/features/<nome>/:
   data/repositories (implementa a interface do domain).
 - presentation/cubit, presentation/pages, presentation/widgets.
 
-Regras de dependência: presentation -> domain <- data. Uma feature pode importar o domain de outra (entidades e interfaces de repository),
-nunca o data. Telas só compõem ou navegam para telas de outra feature nos casos já
-existentes: home monta as abas, client_details embute a seção de entregas do cliente
-e client_list abre o DeliveryForm. A feature home não tem lógica
-própria: apenas compõe as páginas de clients e deliveries nas abas.
+Regras de dependência: presentation -> domain <- data. Uma feature pode
+importar o domain de outra (entidades e interfaces de repository), nunca o
+data. Telas só compõem ou navegam para telas de outra feature nos casos já
+existentes (home monta as abas; client_details embute a seção de entregas;
+client_list abre o DeliveryForm). A feature home não tem lógica própria:
+apenas compõe as páginas de clients e deliveries nas abas.
 
 Código compartilhado fica em lib/core: di/, error/, widgets/ (componentes
-reutilizáveis), router/ (go_router, quando for configurado).
+reutilizáveis), router/ (go_router). core/di e core/router são a raiz de
+composição e podem importar de todas as features; core/widgets não deve
+depender de features (exceção atual: CustomAppBar, dívida conhecida).
 
 # Estado
 flutter_bloc. Cubit por padrão; usar Bloc (eventos + estados) só em
@@ -49,10 +54,20 @@ NÃO usar injectable nem build_runner. Ordem de registro:
 instâncias externas (FirebaseAuth.instance, FirebaseFirestore.instance,
 GoogleSignIn.instance) -> datasources -> repositories (registrados pela
 interface) -> cubits (registerFactory, uma instância por tela).
+setupDependencies() é chamado uma única vez, no main(), antes de runApp;
+nunca em telas ou widgets. Exceção à regra de factory: SessionCubit é
+singleton (vive o app inteiro) e é fornecido na raiz com
+BlocProvider.value.
 
 # Navegação
-go_router será configurado em lib/core/router apenas quando um prompt
-pedir. Até lá, não altere main.dart nem a navegação existente.
+go_router, configurado em lib/core/router/app_router.dart. Use
+context.push / context.pop; não use Navigator.push. O redirect entre
+login e home depende do SessionCubit (estado de sessão com o Usuario e
+seu cargo), nunca de FirebaseAuth direto na UI. As abas da Home
+NÃO são rotas. Rotas de detalhe que recebem um objeto via extra devem
+redirecionar para '/' quando o extra for nulo. Declare rotas estáticas
+(ex: /clients/new) antes das com parâmetro (/clients/:id).
+Não altere main.dart nem a navegação fora do que o prompt pedir.
 
 # Regras de migração
 - Preserve lógica de negócio, queries, nomes de campos do Firestore,

@@ -1,16 +1,16 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
+import '../auth/domain/entities/usuario.dart';
 import '../clients/presentation/pages/client_list.dart';
 import '../../core/widgets/custom_appbar.dart';
 import '../../core/widgets/custom_bottom_appbar.dart';
 import '../deliveries/presentation/pages/delivery_list.dart';
-import '../clients/presentation/pages/client_form.dart';
-import '../deliveries/presentation/pages/delivery_form.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key, required this.user});
+  const HomePage({super.key, required this.usuario});
 
-  final User user;
+  final Usuario usuario;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -50,21 +50,11 @@ class _HomePageState extends State<HomePage> {
             onPressed: () {
               if (_selectedIndex.value == 0) { // Ta na aba de clientes
                 // _clientKey.currentState?.adicionarCliente();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => ClientForm(),
-                  ),
-                );
+                context.push('/clients/new');
                 
               } else if (_selectedIndex.value == 1) { // Aba de entregas
                 // _deliveryKey.currentState?.adicionarEntrega();
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => DeliveryForm(),
-                  ),
-                );
+                context.push('/deliveries/new');
               }
             },
             tooltip: 'Formulário',

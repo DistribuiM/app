@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/custom_appbar.dart';
@@ -52,7 +53,7 @@ class _ClientFormState extends State<ClientForm> {
       child: BlocConsumer<ClientFormCubit, ClientFormState>(
         listener: (context, state) {
           if (state is ClientFormSuccess) {
-            Navigator.pop(context);
+            context.pop();
           } else if (state is ClientFormError) {
             ScaffoldMessenger.of(
               context,
