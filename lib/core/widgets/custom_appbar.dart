@@ -23,9 +23,6 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
-            if (!getIt.isRegistered<AuthRepository>()) {
-              setupDependencies();
-            }
             await getIt<AuthRepository>().signOut();
           },
           tooltip: 'Sair',

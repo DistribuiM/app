@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
-import '../../domain/entities/entrega.dart';
 import '../cubit/client_deliveries_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 

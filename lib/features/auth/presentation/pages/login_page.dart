@@ -11,9 +11,6 @@ class LoginPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (!getIt.isRegistered<AuthCubit>()) {
-      setupDependencies();
-    }
 
     return BlocProvider(
       create: (_) => getIt<AuthCubit>(),
