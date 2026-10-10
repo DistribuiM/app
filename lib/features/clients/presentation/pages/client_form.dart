@@ -7,6 +7,8 @@ import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/dropdown.dart';
 import '../../../../core/widgets/input.dart';
 import '../../../../core/widgets/checkbox.dart';
+import '../../../auth/presentation/cubit/session_cubit.dart';
+import '../../../auth/presentation/cubit/session_state.dart';
 import '../cubit/client_form_cubit.dart';
 import '../cubit/client_form_state.dart';
 
@@ -142,14 +144,28 @@ class _ClientFormState extends State<ClientForm> {
                             return;
                           }
 
+                          final sessionState = context
+                              .read<SessionCubit>()
+                              .state;
+                          if (sessionState is! SessionAuthenticated) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Sessão inválida. Faça login novamente.',
+                                ),
+                              ),
+                            );
+                            return;
+                          }
+
                           context.read<ClientFormCubit>().registrarCliente(
                             nome: _nomeController.text.trim(),
                             rua: _enderecoController.text.trim(),
                             complemento: _complementoController.text.trim(),
                             cidade: _cidadeSelecionada!,
                             telefone: _telefoneController.text.trim(),
-                            idMotoristaResp: 'id_fixo_por_enquanto',
-                            nomeMotoristaResp: 'nome_fixo_por_enquanto',
+                            idMotoristaResp: sessionState.usuario.id,
+                            nomeMotoristaResp: sessionState.usuario.nome,
                           );
                         },
                   child: salvando

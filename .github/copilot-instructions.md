@@ -1,6 +1,7 @@
 # Contexto do projeto
 App Flutter "DistribuiM" para uma empresa de venda de milho e derivados.
 Backend: Firebase (Auth com Google Sign-In, Firestore).
+Package Android: com.gip.app_distribuim.
 
 # Fluxo de telas
 Login (Google) -> Home com 2 abas: Clientes e Entregas.
@@ -35,8 +36,10 @@ Regras de dependência: presentation -> domain <- data. Uma feature pode
 importar o domain de outra (entidades e interfaces de repository), nunca o
 data. Telas só compõem ou navegam para telas de outra feature nos casos já
 existentes (home monta as abas; client_details embute a seção de entregas;
-client_list abre o DeliveryForm). A feature home não tem lógica própria:
-apenas compõe as páginas de clients e deliveries nas abas.
+client_list abre o DeliveryForm). Exceção: qualquer tela pode ler o
+SessionCubit/SessionState (auth) para obter o usuário logado. A feature
+home não tem lógica própria: apenas compõe as páginas de clients e
+deliveries nas abas.
 
 Código compartilhado fica em lib/core: di/, error/, widgets/ (componentes
 reutilizáveis), router/ (go_router). core/di e core/router são a raiz de
