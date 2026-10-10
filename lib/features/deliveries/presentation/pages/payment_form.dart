@@ -25,7 +25,7 @@ class _PaymentFormState extends State<PaymentForm> {
       return;
     }
 
-    print("Imagem pronta para o backend: ${_comprovante!.path}");
+    debugPrint("Imagem pronta para o backend: ${_comprovante!.path}");
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Comprovante salvo com sucesso! (Falta o Backend)'),

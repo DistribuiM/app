@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/entrega.dart';
 
+import 'package:flutter/foundation.dart';
+
 class DeliveryRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -56,9 +58,9 @@ class DeliveryRemoteDataSource {
       });
       await batch.commit();
       
-      print("SUCESSO: Nova entrega registrada perfeitamente!");
+      debugPrint("SUCESSO: Nova entrega registrada perfeitamente!");
     } catch (erro) {
-      print("ERRO ao salvar a entrega: $erro");
+      debugPrint("ERRO ao salvar a entrega: $erro");
     }
   }
 
@@ -83,7 +85,7 @@ class DeliveryRemoteDataSource {
       }
       return null;
     } catch (erro) {
-      print("Erro ao buscar a entrega: $erro");
+      debugPrint("Erro ao buscar a entrega: $erro");
       return null;
     }
   }

@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../auth/domain/entities/usuario.dart';
-import '../clients/presentation/pages/client_list.dart';
-import '../../core/widgets/custom_appbar.dart';
-import '../../core/widgets/custom_bottom_appbar.dart';
-import '../deliveries/presentation/pages/delivery_list.dart';
+import '../../../auth/domain/entities/usuario.dart';
+import '../../../clients/presentation/pages/client_list.dart';
+import '../../../../core/widgets/custom_appbar.dart';
+import '../../../../core/widgets/custom_bottom_appbar.dart';
+import '../../../deliveries/presentation/pages/delivery_list.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.usuario});

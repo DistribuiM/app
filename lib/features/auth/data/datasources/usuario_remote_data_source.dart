@@ -1,5 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-
+import 'package:flutter/foundation.dart';
 import '../../domain/entities/usuario.dart';
 
 class UsuarioRemoteDataSource {
@@ -15,7 +15,7 @@ class UsuarioRemoteDataSource {
       final docSnap = await docRef.get();
 
       if (docSnap.exists) {
-        print("AVISO: Já existe um motorista cadastrado com o e-mail $email!");
+        debugPrint("AVISO: Já existe um motorista cadastrado com o e-mail $email!");
         return;
       }
 
@@ -30,9 +30,9 @@ class UsuarioRemoteDataSource {
         }
       });
 
-      print("Motorista $nome salvo com sucesso!");
+      debugPrint("Motorista $nome salvo com sucesso!");
     } catch (erro) {
-      print("Erro ao salvar motorista: $erro");
+      debugPrint("Erro ao salvar motorista: $erro");
     }
   }
 
@@ -43,7 +43,7 @@ class UsuarioRemoteDataSource {
         return Usuario.fromMap(doc.data(), doc.id);
       }).toList();
     } catch (erro) {
-      print("Erro ao buscar motoristas: $erro");
+      debugPrint("Erro ao buscar motoristas: $erro");
       return [];
     }
   }
@@ -57,7 +57,7 @@ class UsuarioRemoteDataSource {
       }
       return null;
     } catch (erro) {
-      print("Erro ao buscar motorista específico: $erro");
+      debugPrint("Erro ao buscar motorista específico: $erro");
       return null;
     }
   }

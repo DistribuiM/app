@@ -1,6 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../domain/entities/cliente.dart';
 
+import 'package:flutter/foundation.dart';
+
 class ClientRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
 
@@ -22,7 +24,7 @@ class ClientRemoteDataSource {
         .get();
 
       if (query.docs.isNotEmpty) {
-        print("AVISO: Já existe um cliente cadastrado com o telefone $telefone!");
+        debugPrint("AVISO: Já existe um cliente cadastrado com o telefone $telefone!");
         return;
       }
 
@@ -50,9 +52,9 @@ class ClientRemoteDataSource {
         "ultimasEntregas": [] // Array de histórico
       });
       
-      print("SUCESSO: Cliente $nome salvo no banco de dados!");
+      debugPrint("SUCESSO: Cliente $nome salvo no banco de dados!");
     } catch (erro) {
-      print("ERRO ao salvar cliente: $erro");
+      debugPrint("ERRO ao salvar cliente: $erro");
     }
   }
 
@@ -65,7 +67,7 @@ class ClientRemoteDataSource {
       return Cliente.fromMap(doc.data(), doc.id);
     }).toList();
     } catch (erro) {
-      print("Erro ao buscar clientes: $erro");
+      debugPrint("Erro ao buscar clientes: $erro");
       return [];
     }
   }
@@ -82,7 +84,7 @@ class ClientRemoteDataSource {
       }
       return null; 
     } catch (erro) {
-      print("Erro ao buscar cliente específico: $erro");
+      debugPrint("Erro ao buscar cliente específico: $erro");
       return null;
     }
   }

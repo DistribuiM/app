@@ -10,7 +10,7 @@ import '../../features/clients/domain/entities/cliente.dart';
 import '../../features/clients/presentation/pages/client_details.dart';
 import '../../features/clients/presentation/pages/client_form.dart';
 import '../../features/deliveries/presentation/pages/delivery_form.dart';
-import '../../features/home/home_page.dart';
+import '../../features/home/presentation/pages/home_page.dart';
 
 class AuthRefreshNotifier extends ChangeNotifier {
   AuthRefreshNotifier(Stream<Object?> stream) {

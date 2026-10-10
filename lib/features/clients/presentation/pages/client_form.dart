@@ -88,7 +88,7 @@ class _ClientFormState extends State<ClientForm> {
                       hintText: 'Cidade*',
                       onChanged: (valor) {
                         setState(() => _cidadeSelecionada = valor);
-                        print('Cidade selecionada: $valor');
+                        debugPrint('Cidade selecionada: $valor');
                       },
                     ),
                     const SizedBox(height: 20),

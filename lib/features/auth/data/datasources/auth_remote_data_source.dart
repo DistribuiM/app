@@ -44,15 +44,8 @@ class AuthRemoteDataSource {
           serverClientId: AppConfig.webClientId,
         );
 
-        final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-
-        if (googleUser == null) {
-          throw Exception('Login cancelado pelo usuário.');
-        }
-
-        final GoogleSignInAuthentication googleAuth =
-            await googleUser.authentication;
-
+        final GoogleSignInAccount googleUser = await googleSignIn.authenticate();
+        final GoogleSignInAuthentication googleAuth = googleUser.authentication;
         final OAuthCredential credential = GoogleAuthProvider.credential(
           idToken: googleAuth.idToken,
         );
