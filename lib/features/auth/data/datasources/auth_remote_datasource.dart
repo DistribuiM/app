@@ -6,6 +6,9 @@ import 'package:google_sign_in/google_sign_in.dart';
 import '../../../../config/app_config.dart';
 
 class AuthRemoteDataSource {
+  Stream<String?> get emailChanges =>
+      FirebaseAuth.instance.authStateChanges().map((user) => user?.email);
+
   String getGoogleSignInClientId() {
     if (kIsWeb) {
       return AppConfig.webClientId;

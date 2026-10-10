@@ -12,6 +12,7 @@ import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/domain/repositories/usuario_repository.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
+import '../../features/auth/presentation/cubit/session_cubit.dart';
 import '../../features/deliveries/data/datasources/delivery_remote_data_source.dart';
 import '../../features/deliveries/data/repositories/delivery_repository_impl.dart';
 import '../../features/deliveries/domain/repositories/delivery_repository.dart';
@@ -73,6 +74,12 @@ void setupDependencies() {
 
   if (!getIt.isRegistered<AuthCubit>()) {
     getIt.registerFactory<AuthCubit>(() => AuthCubit(getIt<AuthRepository>()));
+  }
+
+  if (!getIt.isRegistered<SessionCubit>()) {
+    getIt.registerLazySingleton<SessionCubit>(
+      () => SessionCubit(getIt<AuthRepository>()),
+    );
   }
 
   if (!getIt.isRegistered<ClientListCubit>()) {

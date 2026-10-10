@@ -14,6 +14,15 @@ class AuthRepositoryImpl implements AuthRepository {
   final UsuarioRemoteDataSource usuarioRemoteDataSource;
 
   @override
+  Stream<Usuario?> get sessionChanges =>
+      authRemoteDataSource.emailChanges.asyncMap((email) {
+        if (email == null) {
+          return null;
+        }
+        return usuarioRemoteDataSource.buscarMotoristaPorId(email);
+      });
+
+  @override
   Future<Usuario> signInWithGoogle() async {
     final email = await authRemoteDataSource.signInWithGoogle();
     final usuario = await usuarioRemoteDataSource.buscarMotoristaPorId(email);
