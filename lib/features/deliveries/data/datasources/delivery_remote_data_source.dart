@@ -24,7 +24,8 @@ class DeliveryRemoteDataSource {
       // doc() vazio faz com que o Firebase crie um id único
       final docRef = _db.collection('entregas').doc();
 
-      await docRef.set({
+      final batch = _db.batch();
+      batch.set(docRef, {
         "id": docRef.id,
         "dataEntrega": dataEntrega,
         "motorista": {
@@ -50,6 +51,10 @@ class DeliveryRemoteDataSource {
         },
         "observacao": observacao
       });
+      batch.update(_db.collection('clientes').doc(idCliente), {
+        'financeiro.saldoPendente': FieldValue.increment(valorPendente),
+      });
+      await batch.commit();
       
       print("SUCESSO: Nova entrega registrada perfeitamente!");
     } catch (erro) {
