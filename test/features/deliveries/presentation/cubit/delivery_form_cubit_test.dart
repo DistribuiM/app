@@ -49,6 +49,81 @@ void main() {
   });
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'emite Loading e LoadError quando buscarClientes lança ServerFailure',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenAnswer((_) async => motoristas);
+      when(
+        () => clientRepository.buscarClientes(),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('msg'),
+    ],
+    verify: (_) {
+      verify(() => usuarioRepository.buscarMotoristas()).called(1);
+      verify(() => clientRepository.buscarClientes()).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'emite Loading e LoadError quando buscarMotoristas lança ServerFailure',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('msg'),
+    ],
+    verify: (_) {
+      verify(() => usuarioRepository.buscarMotoristas()).called(1);
+      verifyNever(() => clientRepository.buscarClientes());
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'emite Loading e Loaded com motoristas e clientes ao carregar dados',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenAnswer((_) async => motoristas);
+      when(
+        () => clientRepository.buscarClientes(),
+      ).thenAnswer((_) async => clientes);
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(),
+    expect: () => [
+      DeliveryFormLoading(),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+    verify: (_) {
+      verify(() => usuarioRepository.buscarMotoristas()).called(1);
+      verify(() => clientRepository.buscarClientes()).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
     'emite Error com a mensagem e volta a Loaded após falha ao registrar entrega',
     build: () {
       when(

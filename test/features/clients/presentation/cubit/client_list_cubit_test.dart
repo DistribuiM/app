@@ -1,3 +1,4 @@
+import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/clients/domain/entities/cliente.dart';
 import 'package:app_distribuim/features/clients/domain/entities/endereco.dart';
 import 'package:app_distribuim/features/clients/domain/repositories/client_repository.dart';
@@ -41,7 +42,7 @@ void main() {
   );
 
   blocTest<ClientListCubit, ClientListState>(
-    'emite loading e erro quando buscarClientes falha',
+    'emite loading e mensagem genérica quando buscarClientes lança Exception',
     build: () {
       when(
         () => clientRepository.buscarClientes(),
@@ -51,7 +52,23 @@ void main() {
     act: (cubit) => cubit.carregarClientes(),
     expect: () => [
       ClientListLoading(),
-      const ClientListError('Falha ao carregar clientes'),
+      const ClientListError('Erro inesperado. Tente novamente.'),
+    ],
+    verify: (_) => verify(() => clientRepository.buscarClientes()).called(1),
+  );
+
+  blocTest<ClientListCubit, ClientListState>(
+    'emite loading e a mensagem de ServerFailure',
+    build: () {
+      when(
+        () => clientRepository.buscarClientes(),
+      ).thenThrow(const ServerFailure('msg'));
+      return ClientListCubit(clientRepository);
+    },
+    act: (cubit) => cubit.carregarClientes(),
+    expect: () => [
+      ClientListLoading(),
+      const ClientListError('msg'),
     ],
     verify: (_) => verify(() => clientRepository.buscarClientes()).called(1),
   );
