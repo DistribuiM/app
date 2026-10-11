@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../../auth/domain/repositories/usuario_repository.dart';
 import '../../../clients/domain/repositories/client_repository.dart';
 import '../../domain/repositories/delivery_repository.dart';
@@ -69,8 +70,12 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
         observacao: observacao,
       );
       emit(DeliveryFormSuccess());
-    } catch (error) {
-      emit(DeliveryFormError(error.toString().replaceFirst('Exception: ', '')));
+    } catch (e) {
+      if (e is Failure) {
+        emit(DeliveryFormError(e.message));
+      } else {
+        emit(const DeliveryFormError('Erro inesperado. Tente novamente.'));
+      }
       emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
     }
   }

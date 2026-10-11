@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/entrega.dart';
-
 import 'package:flutter/foundation.dart';
+
+import '../../domain/entities/entrega.dart';
 
 class DeliveryRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -22,46 +22,42 @@ class DeliveryRemoteDataSource {
     required bool entregue,
     required String observacao,
   }) async {
-    try {
-      // doc() vazio faz com que o Firebase crie um id único
-      final docRef = _db.collection('entregas').doc();
+    // doc() vazio faz com que o Firebase crie um id único
+    final docRef = _db.collection('entregas').doc();
 
-      final batch = _db.batch();
-      batch.set(docRef, {
-        "id": docRef.id,
-        "dataEntrega": dataEntrega,
-        "motorista": {
-          "id": idMotorista,
-          "nome": nomeMotorista,
-        },
-        "cliente": {
-          "id": idCliente,
-          "nome": nomeCliente,
-          "cidade": cidadeCliente,
-        },
-        "quantidadeSacos": quantidadeSacos,
-        "financeiro": {
-          "precoUnitario": precoUnitario,
-          "valorTotal": quantidadeSacos * precoUnitario, // Já faz o cálculo
-          "valorPago": valorPago,
-          "valorPendente": valorPendente,
-        },
-        "formaPagamento": formaPagamento,
-        "status": {
-          "pago": pago,
-          "entregue": entregue,
-        },
-        "observacao": observacao
-      });
-      batch.update(_db.collection('clientes').doc(idCliente), {
-        'financeiro.saldoPendente': FieldValue.increment(valorPendente),
-      });
-      await batch.commit();
-      
-      debugPrint("SUCESSO: Nova entrega registrada perfeitamente!");
-    } catch (erro) {
-      debugPrint("ERRO ao salvar a entrega: $erro");
-    }
+    final batch = _db.batch();
+    batch.set(docRef, {
+      "id": docRef.id,
+      "dataEntrega": dataEntrega,
+      "motorista": {
+        "id": idMotorista,
+        "nome": nomeMotorista,
+      },
+      "cliente": {
+        "id": idCliente,
+        "nome": nomeCliente,
+        "cidade": cidadeCliente,
+      },
+      "quantidadeSacos": quantidadeSacos,
+      "financeiro": {
+        "precoUnitario": precoUnitario,
+        "valorTotal": quantidadeSacos * precoUnitario, // Já faz o cálculo
+        "valorPago": valorPago,
+        "valorPendente": valorPendente,
+      },
+      "formaPagamento": formaPagamento,
+      "status": {
+        "pago": pago,
+        "entregue": entregue,
+      },
+      "observacao": observacao
+    });
+    batch.update(_db.collection('clientes').doc(idCliente), {
+      'financeiro.saldoPendente': FieldValue.increment(valorPendente),
+    });
+    await batch.commit();
+
+    debugPrint("SUCESSO: Nova entrega registrada perfeitamente!");
   }
 
   // Ouve todas as entregas em tempo real

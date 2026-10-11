@@ -1,7 +1,8 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../domain/entities/cliente.dart';
-
 import 'package:flutter/foundation.dart';
+
+import '../../../../core/error/failures.dart';
+import '../../domain/entities/cliente.dart';
 
 class ClientRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
@@ -15,47 +16,44 @@ class ClientRemoteDataSource {
     required String idMotoristaResp,
     required String nomeMotoristaResp,
   }) async {
-    try {
-      // Telefone é único, se já ta registrado, não cria outro
-      final query = await _db
-        .collection('clientes')
-        .where('telefone', isEqualTo: telefone)
-        .limit(1)
-        .get();
+    // Telefone é único, se já ta registrado, não cria outro
+    final query = await _db
+      .collection('clientes')
+      .where('telefone', isEqualTo: telefone)
+      .limit(1)
+      .get();
 
-      if (query.docs.isNotEmpty) {
-        debugPrint("AVISO: Já existe um cliente cadastrado com o telefone $telefone!");
-        return;
-      }
-
-      final docRef = _db.collection('clientes').doc();
-
-      // Se não existe, cria o documento normalmente
-      await docRef.set({
-        "id": docRef.id,
-        "nome": nome,
-        "endereco": {
-          "rua": rua,
-          "complemento": complemento,
-          "cidade": cidade,
-        },
-        "telefone": telefone,
-        "motoristaResponsavel": {
-          "id": idMotoristaResp,
-          "nome": nomeMotoristaResp,
-        },
-        "financeiro": {
-          "saldoPendente": 0.0,
-          "totalComprado": 0.0,
-          "ultimaEntrega": "", // Fica vazio até a primeira compra
-        },
-        "ultimasEntregas": [] // Array de histórico
-      });
-      
-      debugPrint("SUCESSO: Cliente $nome salvo no banco de dados!");
-    } catch (erro) {
-      debugPrint("ERRO ao salvar cliente: $erro");
+    if (query.docs.isNotEmpty) {
+      throw ValidationFailure(
+        'Já existe um cliente cadastrado com o telefone $telefone.',
+      );
     }
+
+    final docRef = _db.collection('clientes').doc();
+
+    // Se não existe, cria o documento normalmente
+    await docRef.set({
+      "id": docRef.id,
+      "nome": nome,
+      "endereco": {
+        "rua": rua,
+        "complemento": complemento,
+        "cidade": cidade,
+      },
+      "telefone": telefone,
+      "motoristaResponsavel": {
+        "id": idMotoristaResp,
+        "nome": nomeMotoristaResp,
+      },
+      "financeiro": {
+        "saldoPendente": 0.0,
+        "totalComprado": 0.0,
+        "ultimaEntrega": "", // Fica vazio até a primeira compra
+      },
+      "ultimasEntregas": [] // Array de histórico
+    });
+
+    debugPrint("SUCESSO: Cliente $nome salvo no banco de dados!");
   }
 
   // Retorna a lista com todos os clientes

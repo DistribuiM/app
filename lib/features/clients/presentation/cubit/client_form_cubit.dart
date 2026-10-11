@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../domain/repositories/client_repository.dart';
 import 'client_form_state.dart';
 
@@ -30,8 +31,12 @@ class ClientFormCubit extends Cubit<ClientFormState> {
         nomeMotoristaResp: nomeMotoristaResp,
       );
       emit(ClientFormSuccess());
-    } catch (error) {
-      emit(ClientFormError(error.toString().replaceFirst('Exception: ', '')));
+    } catch (e) {
+      if (e is Failure) {
+        emit(ClientFormError(e.message));
+      } else {
+        emit(const ClientFormError('Erro inesperado. Tente novamente.'));
+      }
     }
   }
 }

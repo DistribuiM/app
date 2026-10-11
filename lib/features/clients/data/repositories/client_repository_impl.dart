@@ -1,3 +1,6 @@
+import 'package:flutter/foundation.dart';
+
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/cliente.dart';
 import '../../domain/repositories/client_repository.dart';
 import '../datasources/client_remote_data_source.dart';
@@ -21,15 +24,22 @@ class ClientRepositoryImpl implements ClientRepository {
     required String telefone,
     required String idMotoristaResp,
     required String nomeMotoristaResp,
-  }) {
-    return _clientRemoteDataSource.registrarCliente(
-      nome: nome,
-      rua: rua,
-      complemento: complemento,
-      cidade: cidade,
-      telefone: telefone,
-      idMotoristaResp: idMotoristaResp,
-      nomeMotoristaResp: nomeMotoristaResp,
-    );
+  }) async {
+    try {
+      await _clientRemoteDataSource.registrarCliente(
+        nome: nome,
+        rua: rua,
+        complemento: complemento,
+        cidade: cidade,
+        telefone: telefone,
+        idMotoristaResp: idMotoristaResp,
+        nomeMotoristaResp: nomeMotoristaResp,
+      );
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao registrar cliente: $e');
+      throw ServerFailure('Não foi possível salvar o cliente. Tente novamente.');
+    }
   }
 }
