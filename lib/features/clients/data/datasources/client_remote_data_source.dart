@@ -58,16 +58,11 @@ class ClientRemoteDataSource {
 
   // Retorna a lista com todos os clientes
   Future<List<Cliente>> buscarClientes() async {
-    try {
-      final querySnapshot = await _db.collection('clientes').get();
-  
-      return querySnapshot.docs.map((doc) {
+    final querySnapshot = await _db.collection('clientes').get();
+
+    return querySnapshot.docs.map((doc) {
       return Cliente.fromMap(doc.data(), doc.id);
     }).toList();
-    } catch (erro) {
-      debugPrint("Erro ao buscar clientes: $erro");
-      return [];
-    }
   }
 
   // Procura por id

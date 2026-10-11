@@ -97,47 +97,59 @@ class _DeliveryFormState extends State<DeliveryForm> {
                     ),
                     const SizedBox(height: 20),
 
-                    carregando
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.green,
-                            ),
-                          )
-                        : Dropdown(
-                            options: motoristas.map((m) => m.nome).toList(),
-                            hintText: "Motorista*",
-                            onChanged: (nome) {
-                              final index = motoristas.indexWhere(
-                                (m) => m.nome == nome,
-                              );
-                              setState(
-                                () => _motoristaSelecionado = index != -1
-                                    ? motoristas[index]
-                                    : null,
-                              );
-                            },
+                    if (carregando)
+                      const Center(
+                        child: CircularProgressIndicator(color: Colors.green),
+                      )
+                    else if (state is DeliveryFormLoadError)
+                      Column(
+                        children: [
+                          Text(
+                            state.message,
+                            style: const TextStyle(color: Colors.red),
                           ),
+                          TextButton(
+                            onPressed: () => context
+                                .read<DeliveryFormCubit>()
+                                .carregarDados(),
+                            child: const Text('Tentar novamente'),
+                          ),
+                        ],
+                      )
+                    else
+                      Dropdown(
+                        options: motoristas.map((m) => m.nome).toList(),
+                        hintText: "Motorista*",
+                        onChanged: (nome) {
+                          final index = motoristas.indexWhere(
+                            (m) => m.nome == nome,
+                          );
+                          setState(
+                            () => _motoristaSelecionado = index != -1
+                                ? motoristas[index]
+                                : null,
+                          );
+                        },
+                      ),
                     const SizedBox(height: 20),
 
-                    carregando
-                        ? const SizedBox.shrink()
-                        : Dropdown(
-                            options: clientes
-                                .map((c) => "${c.nome} - ${c.endereco.cidade}")
-                                .toList(),
-                            hintText: "Cliente*",
-                            onChanged: (valor) {
-                              final index = clientes.indexWhere(
-                                (c) =>
-                                    "${c.nome} - ${c.endereco.cidade}" == valor,
-                              );
-                              setState(
-                                () => _clienteSelecionado = index != -1
-                                    ? clientes[index]
-                                    : null,
-                              );
-                            },
-                          ),
+                    if (!carregando && state is! DeliveryFormLoadError)
+                      Dropdown(
+                        options: clientes
+                            .map((c) => "${c.nome} - ${c.endereco.cidade}")
+                            .toList(),
+                        hintText: "Cliente*",
+                        onChanged: (valor) {
+                          final index = clientes.indexWhere(
+                            (c) => "${c.nome} - ${c.endereco.cidade}" == valor,
+                          );
+                          setState(
+                            () => _clienteSelecionado = index != -1
+                                ? clientes[index]
+                                : null,
+                          );
+                        },
+                      ),
                     const SizedBox(height: 20),
 
                     const Dropdown(

@@ -12,6 +12,15 @@ sealed class DeliveryFormState extends Equatable {
 
 class DeliveryFormLoading extends DeliveryFormState {}
 
+class DeliveryFormLoadError extends DeliveryFormState {
+  const DeliveryFormLoadError(this.message);
+
+  final String message;
+
+  @override
+  List<Object?> get props => [message];
+}
+
 class DeliveryFormLoaded extends DeliveryFormState {
   const DeliveryFormLoaded({
     required this.motoristas,

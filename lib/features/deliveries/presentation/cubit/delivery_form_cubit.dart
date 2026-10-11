@@ -24,8 +24,14 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
       final motoristas = await _usuarioRepository.buscarMotoristas();
       final clientes = await _clientRepository.buscarClientes();
       emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
-    } catch (error) {
-      emit(DeliveryFormError(error.toString().replaceFirst('Exception: ', '')));
+    } catch (e) {
+      if (e is Failure) {
+        emit(DeliveryFormLoadError(e.message));
+      } else {
+        emit(
+          const DeliveryFormLoadError('Erro inesperado. Tente novamente.'),
+        );
+      }
     }
   }
 

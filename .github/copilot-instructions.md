@@ -59,8 +59,10 @@ negócio violada (mensagem pronta para o usuário) e ServerFailure para
 falha técnica (mensagem genérica; o detalhe vai para debugPrint). O Cubit
 emite o estado de erro com Failure.message (ou uma mensagem genérica se
 não for Failure). A UI mostra a mensagem e só fecha a tela em caso de
-sucesso. Métodos de leitura (buscarClientes etc.) ainda engolem erros:
-dívida conhecida, não alterar sem pedido.
+sucesso. Leituras de lista (buscarClientes, buscarMotoristas) também
+propagam erros, e as telas oferecem "Tentar novamente". Exceção atual:
+buscarMotoristaPorId (login e sessão) ainda engole erros: dívida
+conhecida, não alterar sem pedido.
 
 # Injeção de dependência
 get_it com registro MANUAL em lib/core/di/injection_container.dart.

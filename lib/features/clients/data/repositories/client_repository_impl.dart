@@ -11,8 +11,17 @@ class ClientRepositoryImpl implements ClientRepository {
   final ClientRemoteDataSource _clientRemoteDataSource;
 
   @override
-  Future<List<Cliente>> buscarClientes() {
-    return _clientRemoteDataSource.buscarClientes();
+  Future<List<Cliente>> buscarClientes() async {
+    try {
+      return await _clientRemoteDataSource.buscarClientes();
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao carregar clientes: $e');
+      throw ServerFailure(
+        'Não foi possível carregar os clientes. Tente novamente.',
+      );
+    }
   }
 
   @override

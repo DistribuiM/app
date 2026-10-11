@@ -37,15 +37,10 @@ class UsuarioRemoteDataSource {
   }
 
   Future<List<Usuario>> buscarMotoristas() async {
-    try {
-      final snapshot = await _db.collection('motoristas').get();
-      return snapshot.docs.map((doc) {
-        return Usuario.fromMap(doc.data(), doc.id);
-      }).toList();
-    } catch (erro) {
-      debugPrint("Erro ao buscar motoristas: $erro");
-      return [];
-    }
+    final snapshot = await _db.collection('motoristas').get();
+    return snapshot.docs.map((doc) {
+      return Usuario.fromMap(doc.data(), doc.id);
+    }).toList();
   }
 
   Future<Usuario?> buscarMotoristaPorId(String email) async {

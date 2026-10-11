@@ -33,7 +33,19 @@ class ClientList extends StatelessWidget {
           }
 
           if (state is ClientListError) {
-            return Center(child: Text(state.message));
+            return Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(state.message),
+                  TextButton(
+                    onPressed: () =>
+                        context.read<ClientListCubit>().carregarClientes(),
+                    child: const Text('Tentar novamente'),
+                  ),
+                ],
+              ),
+            );
           }
 
           if (state is! ClientListLoaded) {
