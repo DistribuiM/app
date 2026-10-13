@@ -135,7 +135,9 @@ void main() {
   group('buscarClientes', () {
     test('relança a mesma Failure lançada pelo data source', () async {
       const failure = ValidationFailure('msg');
-      when(() => dataSource.buscarClientes()).thenThrow(failure);
+      when(
+        () => dataSource.buscarClientes(idMotorista: null),
+      ).thenThrow(failure);
 
       await expectLater(
         repository.buscarClientes(),
@@ -145,7 +147,7 @@ void main() {
 
     test('converte Exception em ServerFailure com mensagem genérica', () async {
       when(
-        () => dataSource.buscarClientes(),
+        () => dataSource.buscarClientes(idMotorista: null),
       ).thenThrow(Exception('x'));
 
       await expectLater(
@@ -162,10 +164,25 @@ void main() {
 
     test('devolve o resultado do data source em caso de sucesso', () async {
       when(
-        () => dataSource.buscarClientes(),
+        () => dataSource.buscarClientes(idMotorista: null),
       ).thenAnswer((_) async => clientes);
 
       expect(await repository.buscarClientes(), same(clientes));
+      verify(() => dataSource.buscarClientes(idMotorista: null)).called(1);
+    });
+
+    test('repassa idMotorista ao data source', () async {
+      when(
+        () => dataSource.buscarClientes(idMotorista: idMotoristaResp),
+      ).thenAnswer((_) async => clientes);
+
+      expect(
+        await repository.buscarClientes(idMotorista: idMotoristaResp),
+        same(clientes),
+      );
+      verify(
+        () => dataSource.buscarClientes(idMotorista: idMotoristaResp),
+      ).called(1);
     });
   });
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../auth/domain/entities/usuario.dart';
 import '../../domain/repositories/delivery_repository.dart';
 import 'delivery_list_state.dart';
 
@@ -11,9 +12,11 @@ class DeliveryListCubit extends Cubit<DeliveryListState> {
   final DeliveryRepository _deliveryRepository;
   StreamSubscription? _subscription;
 
-  void ouvirEntregas() {
+  void ouvirEntregas(Usuario usuario) {
     _subscription?.cancel();
-    _subscription = _deliveryRepository.ouvirEntregas().listen(
+    _subscription = _deliveryRepository
+        .ouvirEntregas(idMotorista: usuario.isAdmin ? null : usuario.id)
+        .listen(
       (entregas) => emit(DeliveryListLoaded(entregas)),
       onError: (Object error) => emit(DeliveryListError(error.toString())),
     );

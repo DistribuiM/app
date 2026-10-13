@@ -1,6 +1,7 @@
 import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/deliveries/data/datasources/delivery_remote_data_source.dart';
 import 'package:app_distribuim/features/deliveries/data/repositories/delivery_repository_impl.dart';
+import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -29,6 +30,33 @@ void main() {
   setUp(() {
     dataSource = MockDeliveryRemoteDataSource();
     repository = DeliveryRepositoryImpl(dataSource);
+  });
+
+  group('ouvirEntregas', () {
+    test('repassa idMotorista ao data source', () {
+      final stream = Stream<List<Entrega>>.empty();
+      when(
+        () => dataSource.ouvirEntregas(idMotorista: idMotorista),
+      ).thenAnswer((_) => stream);
+
+      expect(
+        repository.ouvirEntregas(idMotorista: idMotorista),
+        same(stream),
+      );
+      verify(
+        () => dataSource.ouvirEntregas(idMotorista: idMotorista),
+      ).called(1);
+    });
+
+    test('repassa null quando idMotorista é omitido', () {
+      final stream = Stream<List<Entrega>>.empty();
+      when(
+        () => dataSource.ouvirEntregas(idMotorista: null),
+      ).thenAnswer((_) => stream);
+
+      expect(repository.ouvirEntregas(), same(stream));
+      verify(() => dataSource.ouvirEntregas(idMotorista: null)).called(1);
+    });
   });
 
   test('relança a mesma Failure lançada pelo data source', () async {

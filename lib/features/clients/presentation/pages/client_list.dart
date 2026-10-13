@@ -3,6 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/cubit/session_cubit.dart';
+import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/cliente.dart';
 import '../cubit/client_list_cubit.dart';
 import '../cubit/client_list_state.dart';
@@ -22,8 +24,14 @@ class ClientList extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
+    final sessionState = context.watch<SessionCubit>().state;
+    if (sessionState is! SessionAuthenticated) {
+      return const SizedBox.shrink();
+    }
+
+    final usuario = sessionState.usuario;
     return BlocProvider(
-      create: (_) => getIt<ClientListCubit>()..carregarClientes(),
+      create: (_) => getIt<ClientListCubit>()..carregarClientes(usuario),
       child: BlocBuilder<ClientListCubit, ClientListState>(
         builder: (context, state) {
           if (state is ClientListInitial || state is ClientListLoading) {
@@ -39,8 +47,9 @@ class ClientList extends StatelessWidget {
                 children: [
                   Text(state.message),
                   TextButton(
-                    onPressed: () =>
-                        context.read<ClientListCubit>().carregarClientes(),
+                    onPressed: () => context
+                        .read<ClientListCubit>()
+                        .carregarClientes(usuario),
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -53,6 +62,10 @@ class ClientList extends StatelessWidget {
           }
 
           final agrupado = _agruparPorCidade(state.clientes);
+
+          if (state.clientes.isEmpty) {
+            return const Center(child: Text('Nenhum cliente cadastrado'));
+          }
 
           return ListView(
             children: agrupado.entries.map((entry) {

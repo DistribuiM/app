@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../auth/presentation/cubit/session_cubit.dart';
+import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
 import '../cubit/delivery_list_cubit.dart';
 import '../cubit/delivery_list_state.dart';
@@ -21,8 +23,14 @@ class DeliveryList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final sessionState = context.watch<SessionCubit>().state;
+    if (sessionState is! SessionAuthenticated) {
+      return const SizedBox.shrink();
+    }
+
+    final usuario = sessionState.usuario;
     return BlocProvider(
-      create: (_) => getIt<DeliveryListCubit>()..ouvirEntregas(),
+      create: (_) => getIt<DeliveryListCubit>()..ouvirEntregas(usuario),
       child: BlocBuilder<DeliveryListCubit, DeliveryListState>(
         builder: (context, state) {
           if (state is DeliveryListLoading) {

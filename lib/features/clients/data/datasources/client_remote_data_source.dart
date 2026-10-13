@@ -57,8 +57,13 @@ class ClientRemoteDataSource {
   }
 
   // Retorna a lista com todos os clientes
-  Future<List<Cliente>> buscarClientes() async {
-    final querySnapshot = await _db.collection('clientes').get();
+  Future<List<Cliente>> buscarClientes({String? idMotorista}) async {
+    final clientes = _db.collection('clientes');
+    final querySnapshot = idMotorista == null
+        ? await clientes.get()
+        : await clientes
+            .where('motoristaResponsavel.id', isEqualTo: idMotorista)
+            .get();
 
     return querySnapshot.docs.map((doc) {
       return Cliente.fromMap(doc.data(), doc.id);

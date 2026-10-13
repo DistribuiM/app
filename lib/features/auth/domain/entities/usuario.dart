@@ -6,6 +6,8 @@ class Usuario{
   final String email;
   final CargoUsuario cargo;
 
+  bool get isAdmin => cargo == CargoUsuario.admin;
+
   Usuario({
     required this.id,
     required this.nome,

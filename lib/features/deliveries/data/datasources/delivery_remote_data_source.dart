@@ -61,8 +61,12 @@ class DeliveryRemoteDataSource {
   }
 
   // Ouve todas as entregas em tempo real
-  Stream<List<Entrega>> ouvirEntregas() {
-    return _db.collection('entregas').snapshots().map((snapshot) {
+  Stream<List<Entrega>> ouvirEntregas({String? idMotorista}) {
+    final entregas = _db.collection('entregas');
+    final query = idMotorista == null
+        ? entregas
+        : entregas.where('motorista.id', isEqualTo: idMotorista);
+    return query.snapshots().map((snapshot) {
       return snapshot.docs.map((doc) {
         return Entrega.fromMap(doc.data(), doc.id);
       }).toList();

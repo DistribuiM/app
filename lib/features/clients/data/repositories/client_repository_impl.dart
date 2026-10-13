@@ -11,9 +11,11 @@ class ClientRepositoryImpl implements ClientRepository {
   final ClientRemoteDataSource _clientRemoteDataSource;
 
   @override
-  Future<List<Cliente>> buscarClientes() async {
+  Future<List<Cliente>> buscarClientes({String? idMotorista}) async {
     try {
-      return await _clientRemoteDataSource.buscarClientes();
+      return await _clientRemoteDataSource.buscarClientes(
+        idMotorista: idMotorista,
+      );
     } on Failure {
       rethrow;
     } catch (e) {

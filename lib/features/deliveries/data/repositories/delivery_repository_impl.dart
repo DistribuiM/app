@@ -11,8 +11,10 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   final DeliveryRemoteDataSource _deliveryRemoteDataSource;
 
   @override
-  Stream<List<Entrega>> ouvirEntregas() {
-    return _deliveryRemoteDataSource.ouvirEntregas();
+  Stream<List<Entrega>> ouvirEntregas({String? idMotorista}) {
+    return _deliveryRemoteDataSource.ouvirEntregas(
+      idMotorista: idMotorista,
+    );
   }
 
   @override
