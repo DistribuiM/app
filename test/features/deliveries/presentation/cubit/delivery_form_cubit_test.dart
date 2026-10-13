@@ -22,6 +22,18 @@ void main() {
   late MockClientRepository clientRepository;
   late MockUsuarioRepository usuarioRepository;
 
+  final admin = Usuario(
+    id: 'admin-1',
+    nome: 'Admin',
+    email: 'admin@example.com',
+    cargo: CargoUsuario.admin,
+  );
+  final motorista = Usuario(
+    id: 'motorista-1',
+    nome: 'Motorista',
+    email: 'motorista@example.com',
+    cargo: CargoUsuario.motorista,
+  );
   final motoristas = [
     Usuario(
       id: 'motorista-1',
@@ -49,62 +61,13 @@ void main() {
   });
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
-    'emite Loading e LoadError quando buscarClientes lança ServerFailure',
+    'admin carrega todos os clientes e todos os motoristas após si',
     build: () {
       when(
         () => usuarioRepository.buscarMotoristas(),
       ).thenAnswer((_) async => motoristas);
       when(
-        () => clientRepository.buscarClientes(),
-      ).thenThrow(const ServerFailure('msg'));
-      return DeliveryFormCubit(
-        deliveryRepository,
-        clientRepository,
-        usuarioRepository,
-      );
-    },
-    act: (cubit) => cubit.carregarDados(),
-    expect: () => [
-      DeliveryFormLoading(),
-      const DeliveryFormLoadError('msg'),
-    ],
-    verify: (_) {
-      verify(() => usuarioRepository.buscarMotoristas()).called(1);
-      verify(() => clientRepository.buscarClientes()).called(1);
-    },
-  );
-
-  blocTest<DeliveryFormCubit, DeliveryFormState>(
-    'emite Loading e LoadError quando buscarMotoristas lança ServerFailure',
-    build: () {
-      when(
-        () => usuarioRepository.buscarMotoristas(),
-      ).thenThrow(const ServerFailure('msg'));
-      return DeliveryFormCubit(
-        deliveryRepository,
-        clientRepository,
-        usuarioRepository,
-      );
-    },
-    act: (cubit) => cubit.carregarDados(),
-    expect: () => [
-      DeliveryFormLoading(),
-      const DeliveryFormLoadError('msg'),
-    ],
-    verify: (_) {
-      verify(() => usuarioRepository.buscarMotoristas()).called(1);
-      verifyNever(() => clientRepository.buscarClientes());
-    },
-  );
-
-  blocTest<DeliveryFormCubit, DeliveryFormState>(
-    'emite Loading e Loaded com motoristas e clientes ao carregar dados',
-    build: () {
-      when(
-        () => usuarioRepository.buscarMotoristas(),
-      ).thenAnswer((_) async => motoristas);
-      when(
-        () => clientRepository.buscarClientes(),
+        () => clientRepository.buscarClientes(idMotorista: null),
       ).thenAnswer((_) async => clientes);
       return DeliveryFormCubit(
         deliveryRepository,
@@ -112,14 +75,147 @@ void main() {
         usuarioRepository,
       );
     },
-    act: (cubit) => cubit.carregarDados(),
+    act: (cubit) => cubit.carregarDados(admin),
     expect: () => [
       DeliveryFormLoading(),
-      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+      DeliveryFormLoaded(
+        motoristas: [admin, ...motoristas],
+        clientes: clientes,
+      ),
+    ],
+    verify: (_) {
+      verifyInOrder([
+        () => usuarioRepository.buscarMotoristas(),
+        () => clientRepository.buscarClientes(idMotorista: null),
+      ]);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'motorista carrega somente seus clientes sem buscar motoristas',
+    build: () {
+      when(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).thenAnswer((_) async => clientes);
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(motorista),
+    expect: () => [
+      DeliveryFormLoading(),
+      DeliveryFormLoaded(motoristas: const [], clientes: clientes),
+    ],
+    verify: (_) {
+      verifyNever(() => usuarioRepository.buscarMotoristas());
+      verify(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'admin não busca clientes quando buscarMotoristas falha',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(admin),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('msg'),
     ],
     verify: (_) {
       verify(() => usuarioRepository.buscarMotoristas()).called(1);
-      verify(() => clientRepository.buscarClientes()).called(1);
+      verifyNever(
+        () => clientRepository.buscarClientes(idMotorista: null),
+      );
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'admin emite LoadError quando buscarClientes falha',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenAnswer((_) async => motoristas);
+      when(
+        () => clientRepository.buscarClientes(idMotorista: null),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(admin),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('msg'),
+    ],
+    verify: (_) {
+      verify(() => usuarioRepository.buscarMotoristas()).called(1);
+      verify(
+        () => clientRepository.buscarClientes(idMotorista: null),
+      ).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'motorista emite LoadError quando buscarClientes falha',
+    build: () {
+      when(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(motorista),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('msg'),
+    ],
+    verify: (_) {
+      verifyNever(() => usuarioRepository.buscarMotoristas());
+      verify(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'emite mensagem genérica quando buscarClientes lança Exception',
+    build: () {
+      when(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).thenThrow(Exception('Falha'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(motorista),
+    expect: () => [
+      DeliveryFormLoading(),
+      const DeliveryFormLoadError('Erro inesperado. Tente novamente.'),
+    ],
+    verify: (_) {
+      verifyNever(() => usuarioRepository.buscarMotoristas());
+      verify(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      ).called(1);
     },
   );
 

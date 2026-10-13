@@ -1,6 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/error/failures.dart';
+import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/domain/repositories/usuario_repository.dart';
 import '../../../clients/domain/repositories/client_repository.dart';
 import '../../domain/repositories/delivery_repository.dart';
@@ -17,12 +18,19 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
   final ClientRepository _clientRepository;
   final UsuarioRepository _usuarioRepository;
 
-  Future<void> carregarDados() async {
+  Future<void> carregarDados(Usuario usuario) async {
     emit(DeliveryFormLoading());
 
     try {
-      final motoristas = await _usuarioRepository.buscarMotoristas();
-      final clientes = await _clientRepository.buscarClientes();
+      final motoristas = <Usuario>[];
+      if (usuario.isAdmin) {
+        motoristas
+          ..add(usuario)
+          ..addAll(await _usuarioRepository.buscarMotoristas());
+      }
+      final clientes = await _clientRepository.buscarClientes(
+        idMotorista: usuario.isAdmin ? null : usuario.id,
+      );
       emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
     } catch (e) {
       if (e is Failure) {

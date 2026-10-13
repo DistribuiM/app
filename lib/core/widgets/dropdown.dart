@@ -1,9 +1,17 @@
 import 'package:flutter/material.dart';
 class Dropdown extends StatelessWidget {
-  const Dropdown({super.key, required this.options, required this.hintText, this.onChanged});
+  const Dropdown({
+    super.key,
+    required this.options,
+    required this.hintText,
+    this.onChanged,
+    this.initialSelection,
+  });
+
   final List<String> options;
   final String hintText;
   final void Function(String?)? onChanged;
+  final String? initialSelection;
 
   @override
   Widget build(BuildContext context) {
@@ -24,6 +32,7 @@ class Dropdown extends StatelessWidget {
             width: constraints.maxWidth,
             expandedInsets: EdgeInsets.zero,
             hintText: hintText,
+            initialSelection: initialSelection,
             menuHeight: 300,
 
             menuStyle: MenuStyle(

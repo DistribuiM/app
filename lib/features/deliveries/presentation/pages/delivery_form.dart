@@ -10,8 +10,10 @@ import '../../../../core/widgets/input.dart';
 import '../../../../core/widgets/segment.dart';
 import '../../../../core/widgets/segmented_button.dart';
 import '../../../../core/widgets/date_textfield.dart';
-import '../../../clients/domain/entities/cliente.dart';
 import '../../../auth/domain/entities/usuario.dart';
+import '../../../auth/presentation/cubit/session_cubit.dart';
+import '../../../auth/presentation/cubit/session_state.dart';
+import '../../../clients/domain/entities/cliente.dart';
 import '../cubit/delivery_form_cubit.dart';
 import '../cubit/delivery_form_state.dart';
 
@@ -50,8 +52,16 @@ class _DeliveryFormState extends State<DeliveryForm> {
 
   @override
   Widget build(BuildContext context) {
+    final sessionState = context.watch<SessionCubit>().state;
+    if (sessionState is! SessionAuthenticated) {
+      return const SizedBox.shrink();
+    }
+
+    final usuario = sessionState.usuario;
+    _motoristaSelecionado ??= usuario;
+
     return BlocProvider<DeliveryFormCubit>(
-      create: (_) => getIt<DeliveryFormCubit>()..carregarDados(),
+      create: (_) => getIt<DeliveryFormCubit>()..carregarDados(usuario),
       child: BlocConsumer<DeliveryFormCubit, DeliveryFormState>(
         listener: (context, state) {
           if (state is DeliveryFormSuccess) {
@@ -75,6 +85,8 @@ class _DeliveryFormState extends State<DeliveryForm> {
               ? state.clientes
               : <Cliente>[];
           final salvando = state is DeliveryFormSubmitting;
+          final motoristasPorRotulo = _mapearMotoristas(motoristas);
+          final clientesPorRotulo = _mapearClientes(clientes);
 
           return Scaffold(
             appBar: const CustomAppBar(
@@ -109,47 +121,54 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             style: const TextStyle(color: Colors.red),
                           ),
                           TextButton(
-                            onPressed: () => context
-                                .read<DeliveryFormCubit>()
-                                .carregarDados(),
+                            onPressed: () {
+                              setState(() {
+                                _motoristaSelecionado = usuario;
+                                _clienteSelecionado = null;
+                              });
+                              context
+                                  .read<DeliveryFormCubit>()
+                                  .carregarDados(usuario);
+                            },
                             child: const Text('Tentar novamente'),
                           ),
                         ],
                       )
-                    else
+                    else if (usuario.isAdmin)
                       Dropdown(
-                        options: motoristas.map((m) => m.nome).toList(),
+                        options: motoristasPorRotulo.keys.toList(),
                         hintText: "Motorista*",
-                        onChanged: (nome) {
-                          final index = motoristas.indexWhere(
-                            (m) => m.nome == nome,
-                          );
-                          setState(
-                            () => _motoristaSelecionado = index != -1
-                                ? motoristas[index]
-                                : null,
-                          );
-                        },
+                        initialSelection: _rotuloDoMotoristaSelecionado(
+                          motoristasPorRotulo,
+                          _motoristaSelecionado,
+                        ),
+                        onChanged: (rotulo) => setState(
+                          () => _motoristaSelecionado =
+                              motoristasPorRotulo[rotulo],
+                        ),
                       ),
-                    const SizedBox(height: 20),
+                    if (carregando ||
+                        state is DeliveryFormLoadError ||
+                        usuario.isAdmin)
+                      const SizedBox(height: 20),
 
                     if (!carregando && state is! DeliveryFormLoadError)
-                      Dropdown(
-                        options: clientes
-                            .map((c) => "${c.nome} - ${c.endereco.cidade}")
-                            .toList(),
-                        hintText: "Cliente*",
-                        onChanged: (valor) {
-                          final index = clientes.indexWhere(
-                            (c) => "${c.nome} - ${c.endereco.cidade}" == valor,
-                          );
-                          setState(
-                            () => _clienteSelecionado = index != -1
-                                ? clientes[index]
-                                : null,
-                          );
-                        },
-                      ),
+                      clientes.isEmpty
+                          ? const Center(
+                              child: Text('Nenhum cliente cadastrado'),
+                            )
+                          : Dropdown(
+                              options: clientesPorRotulo.keys.toList(),
+                              hintText: "Cliente*",
+                              initialSelection: _rotuloDoClienteSelecionado(
+                                clientesPorRotulo,
+                                _clienteSelecionado,
+                              ),
+                              onChanged: (rotulo) => setState(
+                                () => _clienteSelecionado =
+                                    clientesPorRotulo[rotulo],
+                              ),
+                            ),
                     const SizedBox(height: 20),
 
                     const Dropdown(
@@ -263,8 +282,11 @@ class _DeliveryFormState extends State<DeliveryForm> {
                   onPressed: salvando
                       ? null
                       : () async {
+                          final motorista = usuario.isAdmin
+                              ? _motoristaSelecionado
+                              : usuario;
                           if (_dataEntrega == null ||
-                              _motoristaSelecionado == null ||
+                              motorista == null ||
                               _clienteSelecionado == null ||
                               _quantidadeController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
@@ -292,8 +314,8 @@ class _DeliveryFormState extends State<DeliveryForm> {
                               .read<DeliveryFormCubit>()
                               .registrarEntrega(
                                 dataEntrega: _dataEntrega!,
-                                idMotorista: _motoristaSelecionado!.id,
-                                nomeMotorista: _motoristaSelecionado!.nome,
+                                idMotorista: motorista.id,
+                                nomeMotorista: motorista.nome,
                                 idCliente: _clienteSelecionado!.id,
                                 nomeCliente: _clienteSelecionado!.nome,
                                 cidadeCliente:
@@ -328,4 +350,85 @@ class _DeliveryFormState extends State<DeliveryForm> {
       ),
     );
   }
+}
+
+Map<String, Usuario> _mapearMotoristas(List<Usuario> motoristas) {
+  final contagensPorNome = <String, int>{};
+  for (final motorista in motoristas) {
+    contagensPorNome.update(
+      motorista.nome,
+      (contagem) => contagem + 1,
+      ifAbsent: () => 1,
+    );
+  }
+
+  final motoristasPorRotulo = <String, Usuario>{};
+  for (final motorista in motoristas) {
+    final rotulo = contagensPorNome[motorista.nome]! > 1
+        ? '${motorista.nome} (${motorista.email})'
+        : motorista.nome;
+    motoristasPorRotulo[rotulo] = motorista;
+  }
+  return motoristasPorRotulo;
+}
+
+Map<String, Cliente> _mapearClientes(List<Cliente> clientes) {
+  final contagensPorRotulo = <String, int>{};
+  for (final cliente in clientes) {
+    final rotulo = '${cliente.nome} - ${cliente.endereco.cidade}';
+    contagensPorRotulo.update(
+      rotulo,
+      (contagem) => contagem + 1,
+      ifAbsent: () => 1,
+    );
+  }
+
+  final rotulosComTelefone = <Cliente, String>{};
+  final contagensComTelefone = <String, int>{};
+  for (final cliente in clientes) {
+    final rotulo = '${cliente.nome} - ${cliente.endereco.cidade}';
+    final rotuloComTelefone = contagensPorRotulo[rotulo]! > 1
+        ? '$rotulo (${cliente.telefone})'
+        : rotulo;
+    rotulosComTelefone[cliente] = rotuloComTelefone;
+    contagensComTelefone.update(
+      rotuloComTelefone,
+      (contagem) => contagem + 1,
+      ifAbsent: () => 1,
+    );
+  }
+
+  final clientesPorRotulo = <String, Cliente>{};
+  for (final cliente in clientes) {
+    var rotulo = rotulosComTelefone[cliente]!;
+    if (contagensComTelefone[rotulo]! > 1) {
+      rotulo = '$rotulo #${cliente.id}';
+    }
+    clientesPorRotulo[rotulo] = cliente;
+  }
+  return clientesPorRotulo;
+}
+
+String? _rotuloDoMotoristaSelecionado(
+  Map<String, Usuario> motoristasPorRotulo,
+  Usuario? selecionado,
+) {
+  for (final entry in motoristasPorRotulo.entries) {
+    if (identical(entry.value, selecionado)) {
+      return entry.key;
+    }
+  }
+  return null;
+}
+
+String? _rotuloDoClienteSelecionado(
+  Map<String, Cliente> clientesPorRotulo,
+  Cliente? selecionado,
+) {
+  for (final entry in clientesPorRotulo.entries) {
+    if (identical(entry.value, selecionado)) {
+      return entry.key;
+    }
+  }
+  return null;
 }
