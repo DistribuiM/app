@@ -60,9 +60,17 @@ falha técnica (mensagem genérica; o detalhe vai para debugPrint). O Cubit
 emite o estado de erro com Failure.message (ou uma mensagem genérica se
 não for Failure). A UI mostra a mensagem e só fecha a tela em caso de
 sucesso. Leituras de lista (buscarClientes, buscarMotoristas) também
-propagam erros, e as telas oferecem "Tentar novamente". Exceção atual:
-buscarMotoristaPorId (login e sessão) ainda engole erros: dívida
-conhecida, não alterar sem pedido.
+propagam erros, e as telas oferecem "Tentar novamente".
+buscarMotoristaPorId devolve null só quando o usuário não existe; falhas
+propagam. No login, o repository converte falhas do Google em AuthFailure
+e falhas na verificação do cadastro em ServerFailure (com signOut
+best-effort); a LoginPage mostra state.message. Se a sessão não puder ser
+verificada ao abrir o app, o SessionCubit a trata como deslogada (emite
+SessionUnauthenticated e faz signOut best-effort). Em métodos async, use
+await explícito dentro do try, senão o catch não captura o erro. Métodos
+sem uso (registrarMotorista, buscarClientePorId, buscarClientePorTelefone,
+buscarEntregaPorId) foram mantidos de propósito para telas futuras e
+ainda engolem erros: não apagar nem alterar sem pedido.
 
 # Injeção de dependência
 get_it com registro MANUAL em lib/core/di/injection_container.dart.

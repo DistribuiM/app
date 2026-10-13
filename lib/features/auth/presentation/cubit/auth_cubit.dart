@@ -18,7 +18,7 @@ class AuthCubit extends Cubit<AuthState> {
     } catch (e) {
       final message = e is Failure
           ? e.message
-          : e.toString().replaceFirst('Exception: ', '');
+          : 'Erro inesperado. Tente novamente.';
       emit(AuthError(message));
     }
   }

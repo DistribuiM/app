@@ -46,4 +46,30 @@ void main() {
     act: (_) => sessionChanges.add(null),
     expect: () => [SessionUnauthenticated()],
   );
+
+  blocTest<SessionCubit, SessionState>(
+    'emite SessionUnauthenticated e faz signOut quando a stream falha',
+    setUp: () {
+      when(() => authRepository.signOut()).thenAnswer((_) async {});
+    },
+    build: () => SessionCubit(authRepository),
+    act: (_) => sessionChanges.addError(Exception('Falha de conexão')),
+    expect: () => [SessionUnauthenticated()],
+    verify: (_) => verify(() => authRepository.signOut()).called(1),
+  );
+
+  blocTest<SessionCubit, SessionState>(
+    'continua recebendo dados depois de um erro na stream',
+    setUp: () {
+      when(() => authRepository.signOut()).thenAnswer((_) async {});
+    },
+    build: () => SessionCubit(authRepository),
+    act: (_) {
+      sessionChanges
+        ..addError(Exception('Falha de conexão'))
+        ..add(usuario);
+    },
+    expect: () => [SessionUnauthenticated(), SessionAuthenticated(usuario)],
+    verify: (_) => verify(() => authRepository.signOut()).called(1),
+  );
 }

@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/usuario.dart';
 import '../../domain/repositories/auth_repository.dart';
@@ -24,8 +26,31 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   Future<Usuario> signInWithGoogle() async {
-    final email = await authRemoteDataSource.signInWithGoogle();
-    final usuario = await usuarioRemoteDataSource.buscarMotoristaPorId(email);
+    late final String email;
+    try {
+      email = await authRemoteDataSource.signInWithGoogle();
+    } catch (e) {
+      debugPrint('Erro ao entrar com o Google: $e');
+      throw const AuthFailure(
+        'Não foi possível entrar com o Google. Tente novamente.',
+      );
+    }
+
+    late final Usuario? usuario;
+    try {
+      usuario = await usuarioRemoteDataSource.buscarMotoristaPorId(email);
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao verificar o cadastro do motorista: $e');
+      try {
+        await authRemoteDataSource.signOut();
+      } catch (_) {}
+      throw const ServerFailure(
+        'Não foi possível verificar seu cadastro. Verifique sua conexão e '
+        'tente novamente.',
+      );
+    }
 
     if (usuario == null) {
       await authRemoteDataSource.signOut();

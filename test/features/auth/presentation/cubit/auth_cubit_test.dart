@@ -1,3 +1,4 @@
+import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/auth/domain/entities/usuario.dart';
 import 'package:app_distribuim/features/auth/domain/repositories/auth_repository.dart';
 import 'package:app_distribuim/features/auth/presentation/cubit/auth_cubit.dart';
@@ -36,7 +37,23 @@ void main() {
   );
 
   blocTest<AuthCubit, AuthState>(
-    'emite loading e erro quando signInWithGoogle falha',
+    'emite a mensagem de Failure quando signInWithGoogle falha',
+    build: () {
+      when(
+        () => authRepository.signInWithGoogle(),
+      ).thenThrow(const AuthFailure('Cadastro inválido'));
+      return AuthCubit(authRepository);
+    },
+    act: (cubit) => cubit.signInWithGoogle(),
+    expect: () => [
+      AuthLoading(),
+      const AuthError('Cadastro inválido'),
+    ],
+    verify: (_) => verify(() => authRepository.signInWithGoogle()).called(1),
+  );
+
+  blocTest<AuthCubit, AuthState>(
+    'emite mensagem genérica quando signInWithGoogle lança exceção comum',
     build: () {
       when(
         () => authRepository.signInWithGoogle(),
@@ -46,7 +63,7 @@ void main() {
     act: (cubit) => cubit.signInWithGoogle(),
     expect: () => [
       AuthLoading(),
-      const AuthError('Falha na autenticação'),
+      const AuthError('Erro inesperado. Tente novamente.'),
     ],
     verify: (_) => verify(() => authRepository.signInWithGoogle()).called(1),
   );

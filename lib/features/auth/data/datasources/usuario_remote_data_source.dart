@@ -44,16 +44,11 @@ class UsuarioRemoteDataSource {
   }
 
   Future<Usuario?> buscarMotoristaPorId(String email) async {
-    try {
-      final docSnap = await _db.collection('motoristas').doc(email).get();
+    final docSnap = await _db.collection('motoristas').doc(email).get();
 
-      if (docSnap.exists) {
-        return Usuario.fromMap(docSnap.data()!, docSnap.id);
-      }
-      return null;
-    } catch (erro) {
-      debugPrint("Erro ao buscar motorista específico: $erro");
-      return null;
+    if (docSnap.exists) {
+      return Usuario.fromMap(docSnap.data()!, docSnap.id);
     }
+    return null;
   }
 }
