@@ -13,13 +13,16 @@ class UsuarioRepositoryImpl implements UsuarioRepository {
   @override
   Future<List<Usuario>> buscarMotoristas() async {
     try {
-      return await _usuarioRemoteDataSource.buscarMotoristas();
+      final usuarios = await _usuarioRemoteDataSource.buscarMotoristas();
+      return usuarios
+          .where((usuario) => usuario.cargo == CargoUsuario.motorista)
+          .toList();
     } on Failure {
       rethrow;
     } catch (e) {
       debugPrint('Erro ao carregar motoristas: $e');
       throw ServerFailure(
-        'Não foi possível carregar os motoristas. Tente novamente.',
+        'Não foi possível carregar os motoristas.',
       );
     }
   }

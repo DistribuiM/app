@@ -6,6 +6,7 @@ import '../../features/clients/data/repositories/client_repository_impl.dart';
 import '../../features/clients/domain/repositories/client_repository.dart';
 import '../../features/clients/presentation/cubit/client_form_cubit.dart';
 import '../../features/clients/presentation/cubit/client_list_cubit.dart';
+import '../../features/clients/presentation/cubit/motorista_list_cubit.dart';
 import '../../features/auth/data/datasources/auth_remote_data_source.dart';
 import '../../features/auth/data/datasources/usuario_remote_data_source.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
@@ -91,6 +92,12 @@ void setupDependencies() {
   if (!getIt.isRegistered<ClientFormCubit>()) {
     getIt.registerFactory<ClientFormCubit>(
       () => ClientFormCubit(getIt<ClientRepository>()),
+    );
+  }
+
+  if (!getIt.isRegistered<MotoristaListCubit>()) {
+    getIt.registerFactory<MotoristaListCubit>(
+      () => MotoristaListCubit(getIt<UsuarioRepository>()),
     );
   }
 

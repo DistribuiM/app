@@ -7,10 +7,13 @@ import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/dropdown.dart';
 import '../../../../core/widgets/input.dart';
 import '../../../../core/widgets/checkbox.dart';
+import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../cubit/client_form_cubit.dart';
 import '../cubit/client_form_state.dart';
+import '../cubit/motorista_list_cubit.dart';
+import '../cubit/motorista_list_state.dart';
 
 class ClientForm extends StatefulWidget {
   const ClientForm({super.key});
@@ -37,6 +40,7 @@ class _ClientFormState extends State<ClientForm> {
   final _telefoneController = TextEditingController();
   final _complementoController = TextEditingController();
   String? _cidadeSelecionada;
+  Usuario? _responsavelSelecionado;
 
   @override
   // Limpa os controllers
@@ -64,6 +68,10 @@ class _ClientFormState extends State<ClientForm> {
         },
         builder: (context, state) {
           final salvando = state is ClientFormSubmitting;
+          final sessionState = context.watch<SessionCubit>().state;
+          final isAdmin =
+              sessionState is SessionAuthenticated &&
+              sessionState.usuario.isAdmin;
 
           return Scaffold(
             appBar: CustomAppBar(title: 'Cadastro de Cliente', leading: true),
@@ -106,6 +114,14 @@ class _ClientFormState extends State<ClientForm> {
                           'Digite o complemento ou ponto de referência do cliente',
                       controller: _complementoController,
                     ),
+                    if (isAdmin) ...[
+                      const SizedBox(height: 20),
+                      _MotoristaResponsavelField(
+                        onChanged: (usuario) {
+                          setState(() => _responsavelSelecionado = usuario);
+                        },
+                      ),
+                    ],
                     const SizedBox(height: 20),
                     CheckBox(
                       label: "Permitir vendas a prazo para este cliente?",
@@ -130,10 +146,22 @@ class _ClientFormState extends State<ClientForm> {
                   onPressed: salvando
                       ? null
                       : () {
+                          final currentSessionState = context
+                              .read<SessionCubit>()
+                              .state;
+                          final usuarioLogado =
+                              currentSessionState is SessionAuthenticated
+                                  ? currentSessionState.usuario
+                                  : null;
+                          final isAdminLogado =
+                              usuarioLogado?.isAdmin ?? false;
+
                           if (_nomeController.text.isEmpty ||
                               _telefoneController.text.isEmpty ||
                               _enderecoController.text.isEmpty ||
-                              _cidadeSelecionada == null) {
+                              _cidadeSelecionada == null ||
+                              (isAdminLogado &&
+                                  _responsavelSelecionado == null)) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
@@ -144,10 +172,7 @@ class _ClientFormState extends State<ClientForm> {
                             return;
                           }
 
-                          final sessionState = context
-                              .read<SessionCubit>()
-                              .state;
-                          if (sessionState is! SessionAuthenticated) {
+                          if (usuarioLogado == null) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
                                 content: Text(
@@ -158,14 +183,17 @@ class _ClientFormState extends State<ClientForm> {
                             return;
                           }
 
+                          final responsavel = usuarioLogado.isAdmin
+                              ? _responsavelSelecionado!
+                              : usuarioLogado;
                           context.read<ClientFormCubit>().registrarCliente(
                             nome: _nomeController.text.trim(),
                             rua: _enderecoController.text.trim(),
                             complemento: _complementoController.text.trim(),
                             cidade: _cidadeSelecionada!,
                             telefone: _telefoneController.text.trim(),
-                            idMotoristaResp: sessionState.usuario.id,
-                            nomeMotoristaResp: sessionState.usuario.nome,
+                            idMotoristaResp: responsavel.id,
+                            nomeMotoristaResp: responsavel.nome,
                           );
                         },
                   child: salvando
@@ -180,6 +208,73 @@ class _ClientFormState extends State<ClientForm> {
                 ),
               ),
             ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _MotoristaResponsavelField extends StatelessWidget {
+  const _MotoristaResponsavelField({required this.onChanged});
+
+  final ValueChanged<Usuario?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => getIt<MotoristaListCubit>()..carregarMotoristas(),
+      child: BlocBuilder<MotoristaListCubit, MotoristaListState>(
+        builder: (context, state) {
+          if (state is MotoristaListInitial ||
+              state is MotoristaListLoading) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (state is MotoristaListError) {
+            return Column(
+              children: [
+                Center(
+                  child: Text(
+                    state.message,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+                TextButton(
+                  onPressed: () =>
+                      context.read<MotoristaListCubit>().carregarMotoristas(),
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
+            );
+          }
+
+          if (state is! MotoristaListLoaded) {
+            return const SizedBox.shrink();
+          }
+
+          final nomeContagens = <String, int>{};
+          for (final motorista in state.motoristas) {
+            nomeContagens.update(
+              motorista.nome,
+              (contagem) => contagem + 1,
+              ifAbsent: () => 1,
+            );
+          }
+
+          final usuariosPorRotulo = <String, Usuario>{};
+          for (final motorista in state.motoristas) {
+            final rotulo = nomeContagens[motorista.nome]! > 1
+                ? '${motorista.nome} (${motorista.email})'
+                : motorista.nome;
+            usuariosPorRotulo[rotulo] = motorista;
+          }
+
+          return Dropdown(
+            options: usuariosPorRotulo.keys.toList(),
+            hintText: 'Motorista responsável*',
+            onChanged: (rotulo) => onChanged(usuariosPorRotulo[rotulo]),
           );
         },
       ),
