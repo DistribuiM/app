@@ -11,16 +11,18 @@ Login (Google) -> Home com 2 abas: Clientes e Entregas.
 
 # Entidades de domínio
 - Usuario (id, nome, email, cargo): cargo é o enum CargoUsuario
-  { motorista, admin }. Hoje todo usuário é motorista; admin é um papel
-  futuro. Vive em features/auth/domain. No Firestore: coleção
-  'motoristas', com o e-mail como id do documento. O conteúdo das telas
-  dependerá do cargo (motorista vs admin): telas leem o Usuario logado
-  via SessionCubit, não via FirebaseAuth.
+  { motorista, admin } e Usuario.isAdmin diz se é admin. Vive em
+  features/auth/domain. No Firestore: coleção 'motoristas' (guarda
+  motoristas e admins), com o e-mail como id do documento; campo cargo
+  ausente vale motorista. O conteúdo das telas depende do cargo (ver
+  Cargos): telas leem o Usuario logado via SessionCubit, não via
+  FirebaseAuth.
 - Cliente.
 - Entrega: referencia o motorista apenas por campos simples
   (motoristaId, motoristaNome); NÃO importa Usuario de auth.
 - Pagamento não é feature nem entidade própria: valor pago e forma de
-  pagamento são campos de Entrega.
+  pagamento são campos de Entrega. A tela payment_form.dart está fora de
+  escopo: não editar nem usar como referência.
 
 # Arquitetura
 Clean Architecture feature-first. Features: auth, home, clients,
@@ -50,6 +52,51 @@ depender de features (exceção atual: CustomAppBar, dívida conhecida).
 flutter_bloc. Cubit por padrão; usar Bloc (eventos + estados) só em
 fluxos com várias ações distintas. Estados com Equatable. A UI apenas
 reage a estados; decisões ficam no Cubit/Bloc.
+
+# Cargos (admin e motorista)
+- Admin nunca é responsável por cliente (motoristaResponsavel), mas pode
+  registrar entregas para qualquer cliente. motoristaResponsavel.id e
+  motorista.id guardam o e-mail do motorista, que é o id do documento em
+  'motoristas'.
+- Listas: o motorista vê só os clientes em que é
+  motoristaResponsavel.id e só as entregas com motorista.id dele; o admin
+  vê tudo. O filtro é feito na QUERY do Firestore (datasource, parâmetro
+  opcional idMotorista), nunca filtrando na UI. Os repositories apenas
+  repassam idMotorista e não conhecem Usuario nem cargo.
+- A regra de cargo fica no Cubit: ele recebe o Usuario por parâmetro
+  (carregarClientes(usuario), ouvirEntregas(usuario),
+  carregarDados(usuario)) e calcula
+  idMotorista = usuario.isAdmin ? null : usuario.id. Cubits NÃO leem
+  SessionCubit nem FirebaseAuth. As telas obtêm o Usuario do SessionCubit
+  (SessionAuthenticated; em qualquer outro estado devolvem
+  const SizedBox.shrink()).
+- UsuarioRepository.buscarMotoristas devolve só motoristas, filtrando em
+  Dart. Não use where('cargo', ...) no Firestore para isso: excluiria os
+  documentos sem o campo cargo.
+- Detalhe do cliente: a tabela de entregas mostra todas as entregas do
+  cliente, sem filtro por motorista (o saldo pendente soma todas).
+- ClientForm: o motorista é o responsável automaticamente. O admin escolhe
+  o responsável em um dropdown obrigatório, sem pré-seleção, só com
+  motoristas (nunca admin). Se a lista não carregar, mostra o erro com
+  "Tentar novamente" e o cadastro fica bloqueado (MotoristaListCubit).
+- DeliveryForm: o motorista não vê o dropdown de motorista, é registrado
+  automaticamente e só escolhe entre os clientes dele. O admin vê o
+  dropdown com ele mesmo pré-selecionado mais os motoristas (não outros
+  admins) e todos os clientes.
+- Segurança: esconder dados na tela ou filtrar na query não é controle de
+  acesso. A proteção real são as Firestore Security Rules (melhoria
+  futura); não trate o filtro do app como proteção.
+
+# Formulários e dropdowns
+- O widget Dropdown (core/widgets) trabalha com List<String>. Nunca
+  resolva a opção escolhida por um texto que possa se repetir (nada de
+  indexWhere por nome): use rótulos únicos e um Map<String, T> de rótulo
+  para objeto.
+- Rótulos: motoristas = nome, e 'nome (email)' só nos nomes repetidos;
+  clientes = 'nome - cidade', e 'nome - cidade (telefone)' só nos
+  repetidos, com ' #id' ao final se ainda repetir.
+- Para pré-selecionar uma opção use o parâmetro opcional
+  initialSelection do Dropdown (o rótulo da opção).
 
 # Erros
 Datasources não engolem exceções: deixam propagar (nada de try/catch com
