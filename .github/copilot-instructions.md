@@ -86,6 +86,17 @@ reage a estados; decisões ficam no Cubit/Bloc.
 - Segurança: esconder dados na tela ou filtrar na query não é controle de
   acesso. A proteção real são as Firestore Security Rules (melhoria
   futura); não trate o filtro do app como proteção.
+- Editar cliente: admin e motorista editam. O ClientForm é reaproveitado
+  (parâmetro opcional `cliente`: sem ele é cadastro, com ele é edição) e a
+  rota é /clients/:id/edit com o Cliente em extra. A atualização usa
+  campos pontuados e só altera nome, telefone, endereço e, apenas quando o
+  admin envia, motoristaResponsavel; NUNCA escreve financeiro,
+  ultimasEntregas nem id. O motorista não vê o campo de responsável; o
+  admin vê o dropdown pré-selecionado com o responsável atual, ou vazio e
+  obrigatório se ele não estiver na lista de motoristas. O telefone
+  continua único, ignorando o próprio cliente. Limitações conhecidas:
+  entregas antigas mantêm nome e cidade antigos do cliente, e o checkbox
+  de vendas a prazo não é salvo.
 
 # Formulários e dropdowns
 - O widget Dropdown (core/widgets) trabalha com List<String>. Nunca
