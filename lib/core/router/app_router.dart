@@ -9,6 +9,8 @@ import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/clients/domain/entities/cliente.dart';
 import '../../features/clients/presentation/pages/client_details.dart';
 import '../../features/clients/presentation/pages/client_form.dart';
+import '../../features/deliveries/domain/entities/entrega.dart';
+import '../../features/deliveries/presentation/pages/delivery_details.dart';
 import '../../features/deliveries/presentation/pages/delivery_form.dart';
 import '../../features/home/presentation/pages/home_page.dart';
 
@@ -77,6 +79,13 @@ GoRouter createAppRouter(SessionCubit session) {
       GoRoute(
         path: '/deliveries/new',
         builder: (context, state) => const DeliveryForm(),
+      ),
+      GoRoute(
+        path: '/deliveries/:id',
+        redirect: (context, state) =>
+            state.extra is Entrega ? null : '/',
+        builder: (context, state) =>
+            EntregaPage(entrega: state.extra as Entrega),
       ),
     ],
   );

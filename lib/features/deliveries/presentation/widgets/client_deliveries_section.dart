@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../cubit/client_deliveries_cubit.dart';
@@ -13,8 +14,8 @@ class ClientDeliveriesSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider<ClientDeliveriesCubit>(
-      create: (_) => getIt<ClientDeliveriesCubit>()
-        ..ouvirEntregasDoCliente(idCliente),
+      create: (_) =>
+          getIt<ClientDeliveriesCubit>()..ouvirEntregasDoCliente(idCliente),
       child: BlocBuilder<ClientDeliveriesCubit, DeliveryListState>(
         builder: (context, state) {
           if (state is DeliveryListLoading) {
@@ -44,7 +45,10 @@ class ClientDeliveriesSection extends StatelessWidget {
                   ),
                   const SizedBox(width: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 2,
+                    ),
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(4),
@@ -60,26 +64,65 @@ class ClientDeliveriesSection extends StatelessWidget {
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
                 child: DataTable(
+                  showCheckboxColumn: false,
                   headingRowColor: WidgetStatePropertyAll(Colors.grey[100]),
                   columns: const [
-                    DataColumn(label: Text("Data", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("Qtd.", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("Valor Pago", style: TextStyle(fontWeight: FontWeight.bold))),
-                    DataColumn(label: Text("Pendente", style: TextStyle(fontWeight: FontWeight.bold))),
+                    DataColumn(
+                      label: Text(
+                        "Data",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Qtd.",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Valor Pago",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
+                    DataColumn(
+                      label: Text(
+                        "Pendente",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                   rows: ultimas5.map((entrega) {
-                    return DataRow(cells: [
-                      DataCell(Text(entrega.dataEntrega)),
-                      DataCell(Text("${entrega.quantidadeSacos}")),
-                      DataCell(Text(
-                        "R\$${entrega.valorPago.toStringAsFixed(2)}",
-                        style: TextStyle(color: entrega.pago ? Colors.green[700] : Colors.red[700]),
-                      )),
-                      DataCell(Text(
-                        "R\$${entrega.valorPendente.toStringAsFixed(2)}",
-                        style: TextStyle(color: entrega.pago ? Colors.green[700] : Colors.red[700]),
-                      )),
-                    ]);
+                    return DataRow(
+                      onSelectChanged: (_) => context.push(
+                        '/deliveries/${entrega.id}',
+                        extra: entrega,
+                      ),
+                      cells: [
+                        DataCell(Text(entrega.dataEntrega)),
+                        DataCell(Text("${entrega.quantidadeSacos}")),
+                        DataCell(
+                          Text(
+                            "R\$${entrega.valorPago.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: entrega.pago
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                            ),
+                          ),
+                        ),
+                        DataCell(
+                          Text(
+                            "R\$${entrega.valorPendente.toStringAsFixed(2)}",
+                            style: TextStyle(
+                              color: entrega.pago
+                                  ? Colors.green[700]
+                                  : Colors.red[700],
+                            ),
+                          ),
+                        ),
+                      ],
+                    );
                   }).toList(),
                 ),
               ),
@@ -88,7 +131,10 @@ class ClientDeliveriesSection extends StatelessWidget {
                   onPressed: () {},
                   child: Text(
                     "Ver mais",
-                    style: TextStyle(color: Colors.green[700], fontWeight: FontWeight.bold),
+                    style: TextStyle(
+                      color: Colors.green[700],
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
             ],

@@ -15,6 +15,8 @@ class Entrega {
   final bool entregue;
   final String observacao;
 
+  double get valorTotal => quantidadeSacos * precoUnitario;
+
   Entrega({
     required this.id,
     required this.dataEntrega,
