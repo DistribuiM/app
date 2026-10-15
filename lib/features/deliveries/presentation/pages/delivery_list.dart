@@ -3,14 +3,22 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/widgets/data_row_press_color.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
 import '../cubit/delivery_list_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 
-class DeliveryList extends StatelessWidget {
+class DeliveryList extends StatefulWidget {
   const DeliveryList({super.key});
+
+  @override
+  State<DeliveryList> createState() => _DeliveryListState();
+}
+
+class _DeliveryListState extends State<DeliveryList> {
+  String? _selectedEntregaId;
 
   // AGRUPA POR MOTORISTA
   Map<String, List<Entrega>> _agruparPorMotorista(List<Entrega> entregas) {
@@ -20,6 +28,22 @@ class DeliveryList extends StatelessWidget {
       agrupado.putIfAbsent(nomeMotorista, () => []).add(entrega);
     }
     return agrupado;
+  }
+
+  Future<void> _abrirDetalhe(Entrega entrega) async {
+    if (_selectedEntregaId != null) return;
+    setState(() => _selectedEntregaId = entrega.id);
+    await Future<void>.delayed(const Duration(milliseconds: 200));
+    if (!mounted) return;
+
+    await context.push(
+      '/deliveries/${entrega.id}',
+      extra: entrega,
+    );
+
+    if (mounted) {
+      setState(() => _selectedEntregaId = null);
+    }
   }
 
   @override
@@ -99,7 +123,17 @@ class DeliveryList extends StatelessWidget {
                   // Tabela de entregas
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: DataTable(
+                    child: TweenAnimationBuilder<double>(
+                      tween: Tween<double>(
+                        begin: 0,
+                        end: _selectedEntregaId == null ? 0 : 1,
+                      ),
+                      duration: const Duration(milliseconds: 200),
+                      builder: (context, progress, child) {
+                        final selectedColor = Colors.black.withValues(
+                          alpha: 0.12 * progress,
+                        );
+                        return DataTable(
                       showCheckboxColumn: false,
                       headingRowColor: const WidgetStatePropertyAll(
                         Color(0xFFF5F5F5),
@@ -145,10 +179,20 @@ class DeliveryList extends StatelessWidget {
                       ],
                       rows: entregasDoMotorista.map((entrega) {
                         return DataRow(
-                          onSelectChanged: (_) => context.push(
-                            '/deliveries/${entrega.id}',
-                            extra: entrega,
-                          ),
+                          selected: _selectedEntregaId == entrega.id,
+                          color: _selectedEntregaId == entrega.id
+                              ? WidgetStateProperty.resolveWith((states) {
+                                  if (states.contains(WidgetState.selected)) {
+                                    return selectedColor;
+                                  }
+                                  return null;
+                                })
+                              : dataRowPressColor,
+                          onSelectChanged: (selected) {
+                            if (selected == true) {
+                              _abrirDetalhe(entrega);
+                            }
+                          },
                           cells: [
                             DataCell(Text(entrega.dataEntrega)),
                             DataCell(Text(entrega.nomeCliente)),
@@ -176,6 +220,8 @@ class DeliveryList extends StatelessWidget {
                           ],
                         );
                       }).toList(),
+                        );
+                      },
                     ),
                   ),
 
