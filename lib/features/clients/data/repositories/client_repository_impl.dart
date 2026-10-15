@@ -27,6 +27,24 @@ class ClientRepositoryImpl implements ClientRepository {
   }
 
   @override
+  Stream<List<Cliente>> ouvirClientes({String? idMotorista}) async* {
+    try {
+      await for (final clientes in _clientRemoteDataSource.ouvirClientes(
+        idMotorista: idMotorista,
+      )) {
+        yield clientes;
+      }
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao carregar clientes: $e');
+      throw ServerFailure(
+        'Não foi possível carregar os clientes. Tente novamente.',
+      );
+    }
+  }
+
+  @override
   Future<void> registrarCliente({
     required String nome,
     required String rua,

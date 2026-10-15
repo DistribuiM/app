@@ -180,6 +180,87 @@ void main() {
     });
   });
 
+  group('ouvirClientes', () {
+    test('repassa o idMotorista exato ao data source', () async {
+      when(
+        () => dataSource.ouvirClientes(idMotorista: idMotoristaResp),
+      ).thenAnswer((_) => Stream.value(clientes));
+
+      await expectLater(
+        repository.ouvirClientes(idMotorista: idMotoristaResp),
+        emits(same(clientes)),
+      );
+
+      verify(
+        () => dataSource.ouvirClientes(idMotorista: idMotoristaResp),
+      ).called(1);
+    });
+
+    test('repassa null ao data source', () async {
+      when(
+        () => dataSource.ouvirClientes(idMotorista: null),
+      ).thenAnswer((_) => Stream.value(clientes));
+
+      await expectLater(
+        repository.ouvirClientes(idMotorista: null),
+        emits(same(clientes)),
+      );
+
+      verify(() => dataSource.ouvirClientes(idMotorista: null)).called(1);
+    });
+
+    test('repassa os dados recebidos pelo stream', () async {
+      when(
+        () => dataSource.ouvirClientes(idMotorista: null),
+      ).thenAnswer((_) => Stream.value(clientes));
+
+      await expectLater(repository.ouvirClientes(), emits(same(clientes)));
+    });
+
+    test('relança a mesma Failure emitida pelo stream', () async {
+      const failure = ValidationFailure('msg');
+      when(
+        () => dataSource.ouvirClientes(idMotorista: null),
+      ).thenAnswer((_) => Stream.error(failure));
+
+      await expectLater(repository.ouvirClientes(), emitsError(same(failure)));
+    });
+
+    test('converte exceção do stream em ServerFailure', () async {
+      when(
+        () => dataSource.ouvirClientes(idMotorista: null),
+      ).thenAnswer((_) => Stream.error(Exception('x')));
+
+      await expectLater(
+        repository.ouvirClientes(),
+        emitsError(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível carregar os clientes. Tente novamente.',
+          ),
+        ),
+      );
+    });
+
+    test('converte exceção ao criar o stream em ServerFailure', () async {
+      when(
+        () => dataSource.ouvirClientes(idMotorista: null),
+      ).thenThrow(Exception('x'));
+
+      await expectLater(
+        repository.ouvirClientes(),
+        emitsError(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível carregar os clientes. Tente novamente.',
+          ),
+        ),
+      );
+    });
+  });
+
   group('atualizarCliente', () {
     test('relança a mesma Failure lançada pelo data source', () async {
       const failure = ValidationFailure('msg');

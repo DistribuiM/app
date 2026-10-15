@@ -31,7 +31,7 @@ class ClientList extends StatelessWidget {
 
     final usuario = sessionState.usuario;
     return BlocProvider(
-      create: (_) => getIt<ClientListCubit>()..carregarClientes(usuario),
+      create: (_) => getIt<ClientListCubit>()..ouvirClientes(usuario),
       child: BlocBuilder<ClientListCubit, ClientListState>(
         builder: (context, state) {
           if (state is ClientListInitial || state is ClientListLoading) {
@@ -47,9 +47,8 @@ class ClientList extends StatelessWidget {
                 children: [
                   Text(state.message),
                   TextButton(
-                    onPressed: () => context
-                        .read<ClientListCubit>()
-                        .carregarClientes(usuario),
+                    onPressed: () =>
+                        context.read<ClientListCubit>().ouvirClientes(usuario),
                     child: const Text('Tentar novamente'),
                   ),
                 ],
@@ -159,16 +158,11 @@ class ClientList extends StatelessWidget {
                                       icon: const Icon(Icons.add),
                                     ),
                                     IconButton(
-                                      onPressed: () async {
-                                        final salvou = await context.push<bool>(
+                                      onPressed: () {
+                                        context.push(
                                           '/clients/${cliente.id}/edit',
                                           extra: cliente,
                                         );
-                                        if (salvou == true && context.mounted) {
-                                          context
-                                              .read<ClientListCubit>()
-                                              .carregarClientes(usuario);
-                                        }
                                       },
                                       icon: const Icon(Icons.edit),
                                     ),

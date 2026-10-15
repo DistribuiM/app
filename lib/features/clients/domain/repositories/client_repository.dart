@@ -3,6 +3,8 @@ import '../entities/cliente.dart';
 abstract class ClientRepository {
   Future<List<Cliente>> buscarClientes({String? idMotorista});
 
+  Stream<List<Cliente>> ouvirClientes({String? idMotorista});
+
   Future<void> registrarCliente({
     required String nome,
     required String rua,

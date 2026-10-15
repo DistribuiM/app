@@ -107,6 +107,18 @@ class ClientRemoteDataSource {
     }).toList();
   }
 
+  Stream<List<Cliente>> ouvirClientes({String? idMotorista}) {
+    final clientes = _db.collection('clientes');
+    final query = idMotorista == null
+        ? clientes
+        : clientes.where('motoristaResponsavel.id', isEqualTo: idMotorista);
+    return query.snapshots().map((snapshot) {
+      return snapshot.docs.map((doc) {
+        return Cliente.fromMap(doc.data(), doc.id);
+      }).toList();
+    });
+  }
+
   // Procura por id
   Future<Map<String, dynamic>?> buscarClientePorId(String id) async {
     try {
