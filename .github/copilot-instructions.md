@@ -52,6 +52,12 @@ depender de features (exceção atual: CustomAppBar, dívida conhecida).
 flutter_bloc. Cubit por padrão; usar Bloc (eventos + estados) só em
 fluxos com várias ações distintas. Estados com Equatable. A UI apenas
 reage a estados; decisões ficam no Cubit/Bloc.
+Listas de clientes e entregas são streams do Firestore
+(ClientListCubit.ouvirClientes(usuario), DeliveryListCubit.ouvirEntregas
+(usuario)) e se atualizam sozinhas: NÃO recarregue a lista manualmente
+após cadastrar ou editar. Erros do stream são convertidos para Failure no
+repository, como nas leituras Future. buscarClientes (Future) continua
+existindo para o DeliveryFormCubit.
 
 # Cargos (admin e motorista)
 - Admin nunca é responsável por cliente (motoristaResponsavel), mas pode
