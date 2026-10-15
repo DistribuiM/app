@@ -6,7 +6,9 @@ Package Android: com.gip.app_distribuim.
 # Fluxo de telas
 Login (Google) -> Home com 2 abas: Clientes e Entregas.
 - Clientes: lista -> detalhe do cliente; ação de adicionar cliente.
-- Entregas: apenas lista (sem tela de detalhe); ação de adicionar entrega.
+- Entregas: lista -> detalhe da entrega (somente leitura, rota
+  /deliveries/:id com a Entrega em extra; abre também pelas linhas da
+  tabela de entregas do detalhe do cliente); ação de adicionar entrega.
   Cada item mostra motorista, valor pago, forma de pagamento e cidade.
 
 # Entidades de domínio
@@ -20,6 +22,8 @@ Login (Google) -> Home com 2 abas: Clientes e Entregas.
 - Cliente.
 - Entrega: referencia o motorista apenas por campos simples
   (motoristaId, motoristaNome); NÃO importa Usuario de auth.
+  Entrega.valorTotal é calculado (quantidadeSacos * precoUnitario), não
+  lido do Firestore.
 - Pagamento não é feature nem entidade própria: valor pago e forma de
   pagamento são campos de Entrega. A tela payment_form.dart está fora de
   escopo: não editar nem usar como referência.
