@@ -91,6 +91,7 @@ class ClientDeliveriesSection extends StatelessWidget {
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
                     ),
+                    DataColumn(label: SizedBox.shrink()),
                   ],
                   rows: ultimas5.map((entrega) {
                     return DataRow(
@@ -119,6 +120,13 @@ class ClientDeliveriesSection extends StatelessWidget {
                                   ? Colors.green[700]
                                   : Colors.red[700],
                             ),
+                          ),
+                        ),
+                        DataCell(
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
+                            color: Colors.grey[600],
                           ),
                         ),
                       ],

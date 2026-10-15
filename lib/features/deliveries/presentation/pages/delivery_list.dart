@@ -141,6 +141,7 @@ class DeliveryList extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
+                        DataColumn(label: SizedBox.shrink()),
                       ],
                       rows: entregasDoMotorista.map((entrega) {
                         return DataRow(
@@ -165,6 +166,13 @@ class DeliveryList extends StatelessWidget {
                             ),
                             DataCell(Text(entrega.formaPagamento)),
                             DataCell(Text(entrega.cidadeCliente)),
+                            DataCell(
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: Colors.grey[600],
+                              ),
+                            ),
                           ],
                         );
                       }).toList(),
