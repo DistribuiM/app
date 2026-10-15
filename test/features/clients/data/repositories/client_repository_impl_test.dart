@@ -14,6 +14,7 @@ void main() {
   late ClientRepositoryImpl repository;
 
   const nome = 'Cliente';
+  const id = 'cliente-1';
   const rua = 'Rua A';
   const complemento = '';
   const cidade = 'Cidade';
@@ -26,11 +27,7 @@ void main() {
       id: 'cliente-1',
       nome: nome,
       telefone: telefone,
-      endereco: Endereco(
-        rua: rua,
-        complemento: complemento,
-        cidade: cidade,
-      ),
+      endereco: Endereco(rua: rua, complemento: complemento, cidade: cidade),
       saldoPendente: 0,
       idMotoristaResp: idMotoristaResp,
       nomeMotoristaResp: nomeMotoristaResp,
@@ -139,10 +136,7 @@ void main() {
         () => dataSource.buscarClientes(idMotorista: null),
       ).thenThrow(failure);
 
-      await expectLater(
-        repository.buscarClientes(),
-        throwsA(same(failure)),
-      );
+      await expectLater(repository.buscarClientes(), throwsA(same(failure)));
     });
 
     test('converte Exception em ServerFailure com mensagem genérica', () async {
@@ -182,6 +176,151 @@ void main() {
       );
       verify(
         () => dataSource.buscarClientes(idMotorista: idMotoristaResp),
+      ).called(1);
+    });
+  });
+
+  group('atualizarCliente', () {
+    test('relança a mesma Failure lançada pelo data source', () async {
+      const failure = ValidationFailure('msg');
+      when(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+      ).thenThrow(failure);
+
+      await expectLater(
+        repository.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+        throwsA(same(failure)),
+      );
+    });
+
+    test('converte Exception em ServerFailure com mensagem genérica', () async {
+      when(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+      ).thenThrow(Exception('x'));
+
+      await expectLater(
+        repository.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+        throwsA(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível atualizar o cliente. Tente novamente.',
+          ),
+        ),
+      );
+    });
+
+    test('completa e repassa os valores exatos com responsável', () async {
+      when(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+      ).thenAnswer((_) async {});
+
+      await expectLater(
+        repository.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+        completes,
+      );
+      verify(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+        ),
+      ).called(1);
+    });
+
+    test('repassa null explícito quando não há responsável', () async {
+      when(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: null,
+          nomeMotoristaResp: null,
+        ),
+      ).thenAnswer((_) async {});
+
+      await repository.atualizarCliente(
+        id: id,
+        nome: nome,
+        rua: rua,
+        complemento: complemento,
+        cidade: cidade,
+        telefone: telefone,
+      );
+
+      verify(
+        () => dataSource.atualizarCliente(
+          id: id,
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: null,
+          nomeMotoristaResp: null,
+        ),
       ).called(1);
     });
   });

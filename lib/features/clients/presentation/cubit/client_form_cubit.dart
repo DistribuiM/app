@@ -39,4 +39,37 @@ class ClientFormCubit extends Cubit<ClientFormState> {
       }
     }
   }
+
+  Future<void> atualizarCliente({
+    required String id,
+    required String nome,
+    required String rua,
+    required String complemento,
+    required String cidade,
+    required String telefone,
+    String? idMotoristaResp,
+    String? nomeMotoristaResp,
+  }) async {
+    emit(ClientFormSubmitting());
+
+    try {
+      await _clientRepository.atualizarCliente(
+        id: id,
+        nome: nome,
+        rua: rua,
+        complemento: complemento,
+        cidade: cidade,
+        telefone: telefone,
+        idMotoristaResp: idMotoristaResp,
+        nomeMotoristaResp: nomeMotoristaResp,
+      );
+      emit(ClientFormSuccess());
+    } catch (e) {
+      if (e is Failure) {
+        emit(ClientFormError(e.message));
+      } else {
+        emit(const ClientFormError('Erro inesperado. Tente novamente.'));
+      }
+    }
+  }
 }

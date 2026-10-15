@@ -12,4 +12,15 @@ abstract class ClientRepository {
     required String idMotoristaResp,
     required String nomeMotoristaResp,
   });
+
+  Future<void> atualizarCliente({
+    required String id,
+    required String nome,
+    required String rua,
+    required String complemento,
+    required String cidade,
+    required String telefone,
+    String? idMotoristaResp,
+    String? nomeMotoristaResp,
+  });
 }

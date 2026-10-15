@@ -104,4 +104,96 @@ void main() {
       const ClientFormError('Erro inesperado. Tente novamente.'),
     ],
   );
+
+  blocTest<ClientFormCubit, ClientFormState>(
+    'emite Submitting e Success quando atualizarCliente tem sucesso',
+    build: () {
+      when(
+        () => clientRepository.atualizarCliente(
+          id: 'cliente-1',
+          nome: 'Cliente',
+          rua: 'Rua A',
+          complemento: '',
+          cidade: 'Cidade',
+          telefone: '11999999999',
+          idMotoristaResp: 'motorista-1',
+          nomeMotoristaResp: 'Motorista',
+        ),
+      ).thenAnswer((_) async {});
+      return ClientFormCubit(clientRepository);
+    },
+    act: (cubit) => cubit.atualizarCliente(
+      id: 'cliente-1',
+      nome: 'Cliente',
+      rua: 'Rua A',
+      complemento: '',
+      cidade: 'Cidade',
+      telefone: '11999999999',
+      idMotoristaResp: 'motorista-1',
+      nomeMotoristaResp: 'Motorista',
+    ),
+    expect: () => [ClientFormSubmitting(), ClientFormSuccess()],
+  );
+
+  blocTest<ClientFormCubit, ClientFormState>(
+    'emite Error com a mensagem da ValidationFailure ao atualizar',
+    build: () {
+      when(
+        () => clientRepository.atualizarCliente(
+          id: 'cliente-1',
+          nome: 'Cliente',
+          rua: 'Rua A',
+          complemento: '',
+          cidade: 'Cidade',
+          telefone: '11999999999',
+          idMotoristaResp: null,
+          nomeMotoristaResp: null,
+        ),
+      ).thenThrow(const ValidationFailure('msg'));
+      return ClientFormCubit(clientRepository);
+    },
+    act: (cubit) => cubit.atualizarCliente(
+      id: 'cliente-1',
+      nome: 'Cliente',
+      rua: 'Rua A',
+      complemento: '',
+      cidade: 'Cidade',
+      telefone: '11999999999',
+    ),
+    expect: () => [
+      ClientFormSubmitting(),
+      const ClientFormError('msg'),
+    ],
+  );
+
+  blocTest<ClientFormCubit, ClientFormState>(
+    'emite mensagem genérica para uma Exception ao atualizar',
+    build: () {
+      when(
+        () => clientRepository.atualizarCliente(
+          id: 'cliente-1',
+          nome: 'Cliente',
+          rua: 'Rua A',
+          complemento: '',
+          cidade: 'Cidade',
+          telefone: '11999999999',
+          idMotoristaResp: null,
+          nomeMotoristaResp: null,
+        ),
+      ).thenThrow(Exception('falha'));
+      return ClientFormCubit(clientRepository);
+    },
+    act: (cubit) => cubit.atualizarCliente(
+      id: 'cliente-1',
+      nome: 'Cliente',
+      rua: 'Rua A',
+      complemento: '',
+      cidade: 'Cidade',
+      telefone: '11999999999',
+    ),
+    expect: () => [
+      ClientFormSubmitting(),
+      const ClientFormError('Erro inesperado. Tente novamente.'),
+    ],
+  );
 }

@@ -159,7 +159,17 @@ class ClientList extends StatelessWidget {
                                       icon: const Icon(Icons.add),
                                     ),
                                     IconButton(
-                                      onPressed: () {},
+                                      onPressed: () async {
+                                        final salvou = await context.push<bool>(
+                                          '/clients/${cliente.id}/edit',
+                                          extra: cliente,
+                                        );
+                                        if (salvou == true && context.mounted) {
+                                          context
+                                              .read<ClientListCubit>()
+                                              .carregarClientes(usuario);
+                                        }
+                                      },
                                       icon: const Icon(Icons.edit),
                                     ),
                                     IconButton(

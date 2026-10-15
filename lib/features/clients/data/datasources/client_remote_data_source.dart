@@ -56,6 +56,43 @@ class ClientRemoteDataSource {
     debugPrint("SUCESSO: Cliente $nome salvo no banco de dados!");
   }
 
+  Future<void> atualizarCliente({
+    required String id,
+    required String nome,
+    required String rua,
+    required String complemento,
+    required String cidade,
+    required String telefone,
+    String? idMotoristaResp,
+    String? nomeMotoristaResp,
+  }) async {
+    final query = await _db
+        .collection('clientes')
+        .where('telefone', isEqualTo: telefone)
+        .limit(2)
+        .get();
+
+    if (query.docs.any((doc) => doc.id != id)) {
+      throw ValidationFailure(
+        'Já existe um cliente cadastrado com o telefone $telefone.',
+      );
+    }
+
+    final dados = <String, dynamic>{
+      'nome': nome,
+      'telefone': telefone,
+      'endereco.rua': rua,
+      'endereco.complemento': complemento,
+      'endereco.cidade': cidade,
+    };
+    if (idMotoristaResp != null && nomeMotoristaResp != null) {
+      dados['motoristaResponsavel.id'] = idMotoristaResp;
+      dados['motoristaResponsavel.nome'] = nomeMotoristaResp;
+    }
+
+    await _db.collection('clientes').doc(id).update(dados);
+  }
+
   // Retorna a lista com todos os clientes
   Future<List<Cliente>> buscarClientes({String? idMotorista}) async {
     final clientes = _db.collection('clientes');

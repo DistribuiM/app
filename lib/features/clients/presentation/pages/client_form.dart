@@ -10,13 +10,16 @@ import '../../../../core/widgets/checkbox.dart';
 import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
+import '../../domain/entities/cliente.dart';
 import '../cubit/client_form_cubit.dart';
 import '../cubit/client_form_state.dart';
 import '../cubit/motorista_list_cubit.dart';
 import '../cubit/motorista_list_state.dart';
 
 class ClientForm extends StatefulWidget {
-  const ClientForm({super.key});
+  const ClientForm({super.key, this.cliente});
+
+  final Cliente? cliente;
 
   @override
   State<ClientForm> createState() => _ClientFormState();
@@ -43,6 +46,21 @@ class _ClientFormState extends State<ClientForm> {
   Usuario? _responsavelSelecionado;
 
   @override
+  void initState() {
+    super.initState();
+    final cliente = widget.cliente;
+    if (cliente != null) {
+      _nomeController.text = cliente.nome;
+      _enderecoController.text = cliente.endereco.rua;
+      _telefoneController.text = cliente.telefone;
+      _complementoController.text = cliente.endereco.complemento;
+      if (_cities.contains(cliente.endereco.cidade)) {
+        _cidadeSelecionada = cliente.endereco.cidade;
+      }
+    }
+  }
+
+  @override
   // Limpa os controllers
   void dispose() {
     _nomeController.dispose();
@@ -59,7 +77,7 @@ class _ClientFormState extends State<ClientForm> {
       child: BlocConsumer<ClientFormCubit, ClientFormState>(
         listener: (context, state) {
           if (state is ClientFormSuccess) {
-            context.pop();
+            context.pop(true);
           } else if (state is ClientFormError) {
             ScaffoldMessenger.of(
               context,
@@ -74,7 +92,12 @@ class _ClientFormState extends State<ClientForm> {
               sessionState.usuario.isAdmin;
 
           return Scaffold(
-            appBar: CustomAppBar(title: 'Cadastro de Cliente', leading: true),
+            appBar: CustomAppBar(
+              title: widget.cliente == null
+                  ? 'Cadastro de Cliente'
+                  : 'Editar Cliente',
+              leading: true,
+            ),
             backgroundColor: const Color(0xFFF7F8F5),
             body: SafeArea(
               child: SingleChildScrollView(
@@ -96,6 +119,7 @@ class _ClientFormState extends State<ClientForm> {
                     Dropdown(
                       options: _cities,
                       hintText: 'Cidade*',
+                      initialSelection: _cidadeSelecionada,
                       onChanged: (valor) {
                         setState(() => _cidadeSelecionada = valor);
                         debugPrint('Cidade selecionada: $valor');
@@ -117,6 +141,8 @@ class _ClientFormState extends State<ClientForm> {
                     if (isAdmin) ...[
                       const SizedBox(height: 20),
                       _MotoristaResponsavelField(
+                        idResponsavelAtual:
+                            widget.cliente?.idMotoristaResp,
                         onChanged: (usuario) {
                           setState(() => _responsavelSelecionado = usuario);
                         },
@@ -183,18 +209,43 @@ class _ClientFormState extends State<ClientForm> {
                             return;
                           }
 
-                          final responsavel = usuarioLogado.isAdmin
-                              ? _responsavelSelecionado!
-                              : usuarioLogado;
-                          context.read<ClientFormCubit>().registrarCliente(
-                            nome: _nomeController.text.trim(),
-                            rua: _enderecoController.text.trim(),
-                            complemento: _complementoController.text.trim(),
-                            cidade: _cidadeSelecionada!,
-                            telefone: _telefoneController.text.trim(),
-                            idMotoristaResp: responsavel.id,
-                            nomeMotoristaResp: responsavel.nome,
-                          );
+                          final nome = _nomeController.text.trim();
+                          final rua = _enderecoController.text.trim();
+                          final complemento =
+                              _complementoController.text.trim();
+                          final cidade = _cidadeSelecionada!;
+                          final telefone = _telefoneController.text.trim();
+                          final cubit = context.read<ClientFormCubit>();
+
+                          if (widget.cliente == null) {
+                            final responsavel = usuarioLogado.isAdmin
+                                ? _responsavelSelecionado!
+                                : usuarioLogado;
+                            cubit.registrarCliente(
+                              nome: nome,
+                              rua: rua,
+                              complemento: complemento,
+                              cidade: cidade,
+                              telefone: telefone,
+                              idMotoristaResp: responsavel.id,
+                              nomeMotoristaResp: responsavel.nome,
+                            );
+                          } else {
+                            cubit.atualizarCliente(
+                              id: widget.cliente!.id,
+                              nome: nome,
+                              rua: rua,
+                              complemento: complemento,
+                              cidade: cidade,
+                              telefone: telefone,
+                              idMotoristaResp: usuarioLogado.isAdmin
+                                  ? _responsavelSelecionado!.id
+                                  : null,
+                              nomeMotoristaResp: usuarioLogado.isAdmin
+                                  ? _responsavelSelecionado!.nome
+                                  : null,
+                            );
+                          }
                         },
                   child: salvando
                       ? const CircularProgressIndicator(color: Colors.white)
@@ -215,16 +266,59 @@ class _ClientFormState extends State<ClientForm> {
   }
 }
 
-class _MotoristaResponsavelField extends StatelessWidget {
-  const _MotoristaResponsavelField({required this.onChanged});
+class _MotoristaResponsavelField extends StatefulWidget {
+  const _MotoristaResponsavelField({
+    required this.idResponsavelAtual,
+    required this.onChanged,
+  });
 
+  final String? idResponsavelAtual;
   final ValueChanged<Usuario?> onChanged;
+
+  @override
+  State<_MotoristaResponsavelField> createState() =>
+      _MotoristaResponsavelFieldState();
+}
+
+class _MotoristaResponsavelFieldState
+    extends State<_MotoristaResponsavelField> {
+  String? _initialSelection;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (_) => getIt<MotoristaListCubit>()..carregarMotoristas(),
-      child: BlocBuilder<MotoristaListCubit, MotoristaListState>(
+      child: BlocConsumer<MotoristaListCubit, MotoristaListState>(
+        listenWhen: (previous, current) =>
+            current is MotoristaListLoaded &&
+            previous is! MotoristaListLoaded,
+        listener: (context, state) {
+          if (state is! MotoristaListLoaded) {
+            return;
+          }
+          final idResponsavelAtual = widget.idResponsavelAtual;
+          if (idResponsavelAtual == null) {
+            return;
+          }
+          for (final motorista in state.motoristas) {
+            if (motorista.id == idResponsavelAtual) {
+              final nomeContagens = <String, int>{};
+              for (final item in state.motoristas) {
+                nomeContagens.update(
+                  item.nome,
+                  (contagem) => contagem + 1,
+                  ifAbsent: () => 1,
+                );
+              }
+              final rotulo = nomeContagens[motorista.nome]! > 1
+                  ? '${motorista.nome} (${motorista.email})'
+                  : motorista.nome;
+              setState(() => _initialSelection = rotulo);
+              widget.onChanged(motorista);
+              return;
+            }
+          }
+        },
         builder: (context, state) {
           if (state is MotoristaListInitial ||
               state is MotoristaListLoading) {
@@ -274,7 +368,9 @@ class _MotoristaResponsavelField extends StatelessWidget {
           return Dropdown(
             options: usuariosPorRotulo.keys.toList(),
             hintText: 'Motorista responsável*',
-            onChanged: (rotulo) => onChanged(usuariosPorRotulo[rotulo]),
+            initialSelection: _initialSelection,
+            onChanged: (rotulo) =>
+                widget.onChanged(usuariosPorRotulo[rotulo]),
           );
         },
       ),

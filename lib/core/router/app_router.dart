@@ -61,6 +61,13 @@ GoRouter createAppRouter(SessionCubit session) {
         builder: (context, state) => const ClientForm(),
       ),
       GoRoute(
+        path: '/clients/:id/edit',
+        redirect: (context, state) =>
+            state.extra is Cliente ? null : '/',
+        builder: (context, state) =>
+            ClientForm(cliente: state.extra as Cliente),
+      ),
+      GoRoute(
         path: '/clients/:id',
         redirect: (context, state) =>
             state.extra is Cliente ? null : '/',

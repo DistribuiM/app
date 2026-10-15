@@ -53,4 +53,36 @@ class ClientRepositoryImpl implements ClientRepository {
       throw ServerFailure('Não foi possível salvar o cliente. Tente novamente.');
     }
   }
+
+  @override
+  Future<void> atualizarCliente({
+    required String id,
+    required String nome,
+    required String rua,
+    required String complemento,
+    required String cidade,
+    required String telefone,
+    String? idMotoristaResp,
+    String? nomeMotoristaResp,
+  }) async {
+    try {
+      await _clientRemoteDataSource.atualizarCliente(
+        id: id,
+        nome: nome,
+        rua: rua,
+        complemento: complemento,
+        cidade: cidade,
+        telefone: telefone,
+        idMotoristaResp: idMotoristaResp,
+        nomeMotoristaResp: nomeMotoristaResp,
+      );
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao atualizar cliente: $e');
+      throw ServerFailure(
+        'Não foi possível atualizar o cliente. Tente novamente.',
+      );
+    }
+  }
 }
