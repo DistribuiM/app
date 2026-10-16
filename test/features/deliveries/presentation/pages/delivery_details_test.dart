@@ -1,7 +1,17 @@
+import 'package:app_distribuim/core/di/injection_container.dart';
 import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
+import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_cubit.dart';
+import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_state.dart';
 import 'package:app_distribuim/features/deliveries/presentation/pages/delivery_details.dart';
+import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mocktail/mocktail.dart';
+
+class MockDeliveryDetailsCubit extends MockCubit<DeliveryDetailsState>
+    implements DeliveryDetailsCubit {}
+
+late MockDeliveryDetailsCubit deliveryDetailsCubit;
 
 Entrega _makeEntrega({
   bool pago = false,
@@ -32,8 +42,29 @@ Widget _buildPage(Entrega entrega) {
 }
 
 void main() {
+  setUp(() async {
+    await getIt.reset();
+  });
+
+  tearDown(() async {
+    await getIt.reset();
+  });
+
+  void registerCubit(DeliveryDetailsState initialState, Entrega entrega) {
+    deliveryDetailsCubit = MockDeliveryDetailsCubit();
+    when(() => deliveryDetailsCubit.ouvirEntrega(entrega)).thenReturn(null);
+    whenListen(
+      deliveryDetailsCubit,
+      const Stream<DeliveryDetailsState>.empty(),
+      initialState: initialState,
+    );
+    getIt.registerFactory<DeliveryDetailsCubit>(() => deliveryDetailsCubit);
+  }
+
   testWidgets('exibe os dados da entrega e do pagamento', (tester) async {
-    await tester.pumpWidget(_buildPage(_makeEntrega()));
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega));
 
     for (final texto in [
       'Detalhe da Entrega',
@@ -56,24 +87,26 @@ void main() {
   });
 
   testWidgets('exibe o estado pago e não entregue', (tester) async {
-    await tester.pumpWidget(
-      _buildPage(_makeEntrega(pago: true, entregue: false)),
-    );
+    final entrega = _makeEntrega(pago: true, entregue: false);
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega));
 
     expect(find.text('Pago'), findsOneWidget);
     expect(find.text('Não entregue'), findsOneWidget);
   });
 
   testWidgets('omite observação vazia ou só com espaços', (tester) async {
-    await tester.pumpWidget(_buildPage(_makeEntrega(observacao: '   \n ')));
+    final entrega = _makeEntrega(observacao: '   \n ');
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega));
 
     expect(find.text('Observação'), findsNothing);
   });
 
   testWidgets('exibe observação preenchida', (tester) async {
-    await tester.pumpWidget(
-      _buildPage(_makeEntrega(observacao: 'Entregar no portão lateral')),
-    );
+    final entrega = _makeEntrega(observacao: 'Entregar no portão lateral');
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega));
 
     await tester.scrollUntilVisible(
       find.text('Entregar no portão lateral'),
@@ -83,5 +116,24 @@ void main() {
 
     expect(find.text('Observação'), findsOneWidget);
     expect(find.text('Entregar no portão lateral'), findsOneWidget);
+  });
+
+  testWidgets('exibe mensagem quando a entrega não existe', (tester) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsNotFound(), entrega);
+    await tester.pumpWidget(_buildPage(entrega));
+
+    expect(find.text('Entrega não encontrada'), findsOneWidget);
+  });
+
+  testWidgets('exibe a mensagem de erro do estado', (tester) async {
+    final entrega = _makeEntrega();
+    registerCubit(
+      const DeliveryDetailsError('Falha ao carregar entrega'),
+      entrega,
+    );
+    await tester.pumpWidget(_buildPage(entrega));
+
+    expect(find.text('Falha ao carregar entrega'), findsOneWidget);
   });
 }

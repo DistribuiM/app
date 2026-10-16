@@ -18,6 +18,24 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
   }
 
   @override
+  Stream<Entrega?> ouvirEntrega(String idEntrega) async* {
+    try {
+      await for (final entrega in _deliveryRemoteDataSource.ouvirEntrega(
+        idEntrega,
+      )) {
+        yield entrega;
+      }
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao carregar entrega: $e');
+      throw ServerFailure(
+        'Não foi possível carregar a entrega. Tente novamente.',
+      );
+    }
+  }
+
+  @override
   Stream<List<Entrega>> ouvirEntregasDoCliente(String idCliente) {
     return _deliveryRemoteDataSource.ouvirEntregasDoCliente(idCliente);
   }

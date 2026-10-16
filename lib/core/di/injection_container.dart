@@ -18,6 +18,7 @@ import '../../features/deliveries/data/datasources/delivery_remote_data_source.d
 import '../../features/deliveries/data/repositories/delivery_repository_impl.dart';
 import '../../features/deliveries/domain/repositories/delivery_repository.dart';
 import '../../features/deliveries/presentation/cubit/client_deliveries_cubit.dart';
+import '../../features/deliveries/presentation/cubit/delivery_details_cubit.dart';
 import '../../features/deliveries/presentation/cubit/delivery_form_cubit.dart';
 import '../../features/deliveries/presentation/cubit/delivery_list_cubit.dart';
 
@@ -104,6 +105,12 @@ void setupDependencies() {
   if (!getIt.isRegistered<DeliveryListCubit>()) {
     getIt.registerFactory<DeliveryListCubit>(
       () => DeliveryListCubit(getIt<DeliveryRepository>()),
+    );
+  }
+
+  if (!getIt.isRegistered<DeliveryDetailsCubit>()) {
+    getIt.registerFactory<DeliveryDetailsCubit>(
+      () => DeliveryDetailsCubit(getIt<DeliveryRepository>()),
     );
   }
 

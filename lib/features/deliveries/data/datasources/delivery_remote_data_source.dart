@@ -73,11 +73,20 @@ class DeliveryRemoteDataSource {
     });
   }
 
+  Stream<Entrega?> ouvirEntrega(String idEntrega) {
+    return _db.collection('entregas').doc(idEntrega).snapshots().map((doc) {
+      if (!doc.exists) {
+        return null;
+      }
+      return Entrega.fromMap(doc.data()!, doc.id);
+    });
+  }
+
   // Procura por id
   Future<Map<String, dynamic>?> buscarEntregaPorId(String idEntrega) async {
     try {
       final docSnap = await _db.collection('entregas').doc(idEntrega).get();
-      
+
       if (docSnap.exists) {
         final dados = docSnap.data()!;
         dados['id'] = docSnap.id;

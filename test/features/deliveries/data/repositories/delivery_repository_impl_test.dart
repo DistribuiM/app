@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/deliveries/data/datasources/delivery_remote_data_source.dart';
 import 'package:app_distribuim/features/deliveries/data/repositories/delivery_repository_impl.dart';
@@ -39,10 +41,7 @@ void main() {
         () => dataSource.ouvirEntregas(idMotorista: idMotorista),
       ).thenAnswer((_) => stream);
 
-      expect(
-        repository.ouvirEntregas(idMotorista: idMotorista),
-        same(stream),
-      );
+      expect(repository.ouvirEntregas(idMotorista: idMotorista), same(stream));
       verify(
         () => dataSource.ouvirEntregas(idMotorista: idMotorista),
       ).called(1);
@@ -56,6 +55,92 @@ void main() {
 
       expect(repository.ouvirEntregas(), same(stream));
       verify(() => dataSource.ouvirEntregas(idMotorista: null)).called(1);
+    });
+  });
+
+  group('ouvirEntrega', () {
+    const idEntrega = 'entrega-1';
+    final entrega = Entrega(
+      id: idEntrega,
+      dataEntrega: dataEntrega,
+      idMotorista: idMotorista,
+      nomeMotorista: nomeMotorista,
+      idCliente: idCliente,
+      nomeCliente: nomeCliente,
+      cidadeCliente: cidadeCliente,
+      quantidadeSacos: quantidadeSacos,
+      precoUnitario: precoUnitario,
+      valorPago: valorPago,
+      valorPendente: valorPendente,
+      formaPagamento: formaPagamento,
+      pago: pago,
+      entregue: entregue,
+      observacao: observacao,
+    );
+
+    test('repassa o id exato e encaminha dados e null', () async {
+      final controller = StreamController<Entrega?>();
+      when(
+        () => dataSource.ouvirEntrega(idEntrega),
+      ).thenAnswer((_) => controller.stream);
+
+      final expectation = expectLater(
+        repository.ouvirEntrega(idEntrega),
+        emitsInOrder([same(entrega), isNull]),
+      );
+      controller
+        ..add(entrega)
+        ..add(null);
+      await controller.close();
+      await expectation;
+
+      verify(() => dataSource.ouvirEntrega(idEntrega)).called(1);
+    });
+
+    test('repassa a mesma Failure emitida pelo stream', () async {
+      const failure = ValidationFailure('Falha de validação');
+      when(
+        () => dataSource.ouvirEntrega(idEntrega),
+      ).thenAnswer((_) => Stream<Entrega?>.error(failure));
+
+      await expectLater(
+        repository.ouvirEntrega(idEntrega),
+        emitsError(same(failure)),
+      );
+    });
+
+    test('converte erro comum do stream em ServerFailure', () async {
+      when(
+        () => dataSource.ouvirEntrega(idEntrega),
+      ).thenAnswer((_) => Stream<Entrega?>.error(Exception('falha')));
+
+      await expectLater(
+        repository.ouvirEntrega(idEntrega),
+        emitsError(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível carregar a entrega. Tente novamente.',
+          ),
+        ),
+      );
+    });
+
+    test('converte erro síncrono do data source em ServerFailure', () async {
+      when(
+        () => dataSource.ouvirEntrega(idEntrega),
+      ).thenThrow(Exception('falha'));
+
+      await expectLater(
+        repository.ouvirEntrega(idEntrega),
+        emitsError(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível carregar a entrega. Tente novamente.',
+          ),
+        ),
+      );
     });
   });
 

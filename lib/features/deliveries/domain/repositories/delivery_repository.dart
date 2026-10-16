@@ -3,6 +3,8 @@ import '../entities/entrega.dart';
 abstract class DeliveryRepository {
   Stream<List<Entrega>> ouvirEntregas({String? idMotorista});
 
+  Stream<Entrega?> ouvirEntrega(String idEntrega);
+
   Stream<List<Entrega>> ouvirEntregasDoCliente(String idCliente);
 
   Future<void> registrarEntrega({
