@@ -107,6 +107,17 @@ existindo para o DeliveryFormCubit.
   continua único, ignorando o próprio cliente. Limitações conhecidas:
   entregas antigas mantêm nome e cidade antigos do cliente, e o checkbox
   de vendas a prazo não é salvo.
+- Editar entrega: admin edita qualquer entrega; motorista só as dele (o
+  ícone de editar no detalhe só aparece nesses casos). O DeliveryForm é
+  reaproveitado (parâmetro opcional `entrega`) e a rota é
+  /deliveries/:id/edit com a Entrega em extra. O cliente da entrega NÃO é
+  editável. A atualização é uma transação do Firestore: lê a entrega
+  gravada, recalcula valorTotal, valorPendente e status.pago, ajusta
+  clientes/{id}.financeiro.saldoPendente pela diferença
+  (FieldValue.increment) e nunca escreve id, cliente.* nem status.entregue.
+  O detalhe da entrega ouve o documento por id (DeliveryDetailsCubit) e se
+  atualiza sozinho. Limitações conhecidas: "Local da Entrega" e o
+  comprovante não são gravados; a ficha do cliente não se atualiza sozinha.
 
 # Formulários e dropdowns
 - O widget Dropdown (core/widgets) trabalha com List<String>. Nunca
@@ -118,6 +129,10 @@ existindo para o DeliveryFormCubit.
   repetidos, com ' #id' ao final se ainda repetir.
 - Para pré-selecionar uma opção use o parâmetro opcional
   initialSelection do Dropdown (o rótulo da opção).
+- CustomSegmentedButton e DateTextField aceitam valor inicial
+  (initialValue / initialDate, opcionais). Passe SEMPRE a variável de
+  estado atual da tela como valor inicial, para o widget recriado ficar
+  coerente com ela.
 
 # Erros
 Datasources não engolem exceções: deixam propagar (nada de try/catch com
