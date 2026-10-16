@@ -4,6 +4,7 @@ import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/deliveries/data/datasources/delivery_remote_data_source.dart';
 import 'package:app_distribuim/features/deliveries/data/repositories/delivery_repository_impl.dart';
 import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
+import 'package:app_distribuim/features/deliveries/domain/repositories/delivery_repository.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -144,6 +145,151 @@ void main() {
     });
   });
 
+  group('atualizarEntrega', () {
+    const id = 'entrega-2';
+    const novaDataEntrega = '2026-10-15';
+    const novoIdMotorista = 'motorista-2';
+    const novoNomeMotorista = 'Novo Motorista';
+    const novaQuantidade = 3;
+    const novoPrecoUnitario = 90.0;
+    const novoValorPago = 50.0;
+    const novoValorPendente = 220.0;
+    const novaFormaPagamento = 'Pix';
+    const novoPago = false;
+    const novaObservacao = 'Atualizada';
+
+    test('relança a mesma Failure do data source', () async {
+      const failure = ValidationFailure('msg');
+      when(
+        () => dataSource.atualizarEntrega(
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+      ).thenThrow(failure);
+
+      await expectLater(
+        _atualizarEntrega(
+          repository,
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+        throwsA(same(failure)),
+      );
+    });
+
+    test('converte Exception em ServerFailure', () async {
+      when(
+        () => dataSource.atualizarEntrega(
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+      ).thenThrow(Exception('falha'));
+
+      await expectLater(
+        _atualizarEntrega(
+          repository,
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+        throwsA(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível atualizar a entrega. Tente novamente.',
+          ),
+        ),
+      );
+    });
+
+    test('completa e repassa todos os valores exatos', () async {
+      when(
+        () => dataSource.atualizarEntrega(
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+      ).thenAnswer((_) async {});
+
+      await expectLater(
+        _atualizarEntrega(
+          repository,
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+        completes,
+      );
+
+      verify(
+        () => dataSource.atualizarEntrega(
+          id: id,
+          dataEntrega: novaDataEntrega,
+          idMotorista: novoIdMotorista,
+          nomeMotorista: novoNomeMotorista,
+          quantidadeSacos: novaQuantidade,
+          precoUnitario: novoPrecoUnitario,
+          valorPago: novoValorPago,
+          valorPendente: novoValorPendente,
+          formaPagamento: novaFormaPagamento,
+          pago: novoPago,
+          observacao: novaObservacao,
+        ),
+      ).called(1);
+    });
+  });
+
   test('relança a mesma Failure lançada pelo data source', () async {
     const failure = ValidationFailure('msg');
     when(
@@ -273,4 +419,33 @@ void main() {
       completes,
     );
   });
+}
+
+Future<void> _atualizarEntrega(
+  DeliveryRepository repository, {
+  required String id,
+  required String dataEntrega,
+  required String idMotorista,
+  required String nomeMotorista,
+  required int quantidadeSacos,
+  required double precoUnitario,
+  required double valorPago,
+  required double valorPendente,
+  required String formaPagamento,
+  required bool pago,
+  required String observacao,
+}) {
+  return repository.atualizarEntrega(
+    id: id,
+    dataEntrega: dataEntrega,
+    idMotorista: idMotorista,
+    nomeMotorista: nomeMotorista,
+    quantidadeSacos: quantidadeSacos,
+    precoUnitario: precoUnitario,
+    valorPago: valorPago,
+    valorPendente: valorPendente,
+    formaPagamento: formaPagamento,
+    pago: pago,
+    observacao: observacao,
+  );
 }

@@ -117,6 +117,52 @@ void main() {
   );
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'admin não busca clientes quando incluirClientes é false',
+    build: () {
+      when(
+        () => usuarioRepository.buscarMotoristas(),
+      ).thenAnswer((_) async => motoristas);
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    act: (cubit) => cubit.carregarDados(admin, incluirClientes: false),
+    expect: () => [
+      DeliveryFormLoading(),
+      DeliveryFormLoaded(
+        motoristas: [admin, ...motoristas],
+        clientes: const [],
+      ),
+    ],
+    verify: (_) {
+      verify(() => usuarioRepository.buscarMotoristas()).called(1);
+      verifyNever(() => clientRepository.buscarClientes(idMotorista: null));
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'motorista não busca listas quando incluirClientes é false',
+    build: () => DeliveryFormCubit(
+      deliveryRepository,
+      clientRepository,
+      usuarioRepository,
+    ),
+    act: (cubit) => cubit.carregarDados(motorista, incluirClientes: false),
+    expect: () => [
+      DeliveryFormLoading(),
+      DeliveryFormLoaded(motoristas: const [], clientes: const []),
+    ],
+    verify: (_) {
+      verifyNever(() => usuarioRepository.buscarMotoristas());
+      verifyNever(
+        () => clientRepository.buscarClientes(idMotorista: 'motorista-1'),
+      );
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
     'admin não busca clientes quando buscarMotoristas falha',
     build: () {
       when(
@@ -129,15 +175,10 @@ void main() {
       );
     },
     act: (cubit) => cubit.carregarDados(admin),
-    expect: () => [
-      DeliveryFormLoading(),
-      const DeliveryFormLoadError('msg'),
-    ],
+    expect: () => [DeliveryFormLoading(), const DeliveryFormLoadError('msg')],
     verify: (_) {
       verify(() => usuarioRepository.buscarMotoristas()).called(1);
-      verifyNever(
-        () => clientRepository.buscarClientes(idMotorista: null),
-      );
+      verifyNever(() => clientRepository.buscarClientes(idMotorista: null));
     },
   );
 
@@ -157,10 +198,7 @@ void main() {
       );
     },
     act: (cubit) => cubit.carregarDados(admin),
-    expect: () => [
-      DeliveryFormLoading(),
-      const DeliveryFormLoadError('msg'),
-    ],
+    expect: () => [DeliveryFormLoading(), const DeliveryFormLoadError('msg')],
     verify: (_) {
       verify(() => usuarioRepository.buscarMotoristas()).called(1);
       verify(
@@ -182,10 +220,7 @@ void main() {
       );
     },
     act: (cubit) => cubit.carregarDados(motorista),
-    expect: () => [
-      DeliveryFormLoading(),
-      const DeliveryFormLoadError('msg'),
-    ],
+    expect: () => [DeliveryFormLoading(), const DeliveryFormLoadError('msg')],
     verify: (_) {
       verifyNever(() => usuarioRepository.buscarMotoristas());
       verify(
@@ -286,5 +321,160 @@ void main() {
         observacao: '',
       ),
     ).called(1),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarEntrega emite Submitting e Success',
+    build: () {
+      when(
+        () => deliveryRepository.atualizarEntrega(
+          id: 'entrega-1',
+          dataEntrega: '2026-10-15',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          quantidadeSacos: 2,
+          precoUnitario: 90,
+          valorPago: 50,
+          valorPendente: 130,
+          formaPagamento: 'Pix',
+          pago: false,
+          observacao: 'Revisada',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarEntrega,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+    verify: (_) => verify(
+      () => deliveryRepository.atualizarEntrega(
+        id: 'entrega-1',
+        dataEntrega: '2026-10-15',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        quantidadeSacos: 2,
+        precoUnitario: 90,
+        valorPago: 50,
+        valorPendente: 130,
+        formaPagamento: 'Pix',
+        pago: false,
+        observacao: 'Revisada',
+      ),
+    ).called(1),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarEntrega preserva Failure e retorna a Loaded',
+    build: () {
+      when(
+        () => deliveryRepository.atualizarEntrega(
+          id: 'entrega-1',
+          dataEntrega: '2026-10-15',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          quantidadeSacos: 2,
+          precoUnitario: 90,
+          valorPago: 50,
+          valorPendente: 130,
+          formaPagamento: 'Pix',
+          pago: false,
+          observacao: 'Revisada',
+        ),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarEntrega,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError('msg'),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarEntrega usa mensagem genérica para Exception',
+    build: () {
+      when(
+        () => deliveryRepository.atualizarEntrega(
+          id: 'entrega-1',
+          dataEntrega: '2026-10-15',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          quantidadeSacos: 2,
+          precoUnitario: 90,
+          valorPago: 50,
+          valorPendente: 130,
+          formaPagamento: 'Pix',
+          pago: false,
+          observacao: 'Revisada',
+        ),
+      ).thenThrow(Exception('falha'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarEntrega,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError('Erro inesperado. Tente novamente.'),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarEntrega ignora estados diferentes de Loaded',
+    build: () => DeliveryFormCubit(
+      deliveryRepository,
+      clientRepository,
+      usuarioRepository,
+    ),
+    act: _atualizarEntrega,
+    expect: () => <DeliveryFormState>[],
+    verify: (_) => verifyNever(
+      () => deliveryRepository.atualizarEntrega(
+        id: 'entrega-1',
+        dataEntrega: '2026-10-15',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        quantidadeSacos: 2,
+        precoUnitario: 90,
+        valorPago: 50,
+        valorPendente: 130,
+        formaPagamento: 'Pix',
+        pago: false,
+        observacao: 'Revisada',
+      ),
+    ),
+  );
+}
+
+Future<void> _atualizarEntrega(DeliveryFormCubit cubit) {
+  return cubit.atualizarEntrega(
+    id: 'entrega-1',
+    dataEntrega: '2026-10-15',
+    idMotorista: 'motorista-1',
+    nomeMotorista: 'Motorista',
+    quantidadeSacos: 2,
+    precoUnitario: 90,
+    valorPago: 50,
+    valorPendente: 130,
+    formaPagamento: 'Pix',
+    pago: false,
+    observacao: 'Revisada',
   );
 }

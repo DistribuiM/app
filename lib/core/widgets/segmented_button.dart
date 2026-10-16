@@ -2,9 +2,16 @@ import 'package:flutter/material.dart';
 import 'segment.dart';
 
 class CustomSegmentedButton extends StatefulWidget {
-  const CustomSegmentedButton({super.key, required this.segments, this.onSelectionChanged});
+  const CustomSegmentedButton({
+    super.key,
+    required this.segments,
+    this.onSelectionChanged,
+    this.initialValue,
+  });
+
   final List<Segment> segments;
   final Function(int)? onSelectionChanged;
+  final int? initialValue;
 
   @override
   State<CustomSegmentedButton> createState() => _CustomSegmentedButtonState();
@@ -16,7 +23,7 @@ class _CustomSegmentedButtonState extends State<CustomSegmentedButton> {
   @override
   void initState() {
     super.initState();
-    selectedValue = widget.segments.first.value;
+    selectedValue = widget.initialValue ?? widget.segments.first.value;
   }
 
   @override
@@ -39,7 +46,7 @@ class _CustomSegmentedButtonState extends State<CustomSegmentedButton> {
           return ButtonSegment<int>(
             value: segment.value,
             label: Text(segment.label),
-            icon: segment.icon == null ? null : Icon(segment.icon)
+            icon: segment.icon == null ? null : Icon(segment.icon),
           );
         }).toList(),
         selected: <int>{selectedValue},

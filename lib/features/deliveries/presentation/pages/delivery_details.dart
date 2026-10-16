@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/custom_appbar.dart';
+import '../../../auth/presentation/cubit/session_cubit.dart';
+import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
 import '../cubit/delivery_details_cubit.dart';
 import '../cubit/delivery_details_state.dart';
@@ -14,15 +17,31 @@ class EntregaPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF7F8F5),
-      appBar: const CustomAppBar(title: 'Detalhe da Entrega', leading: true),
-      body: SafeArea(
-        child: BlocProvider(
-          create: (_) => getIt<DeliveryDetailsCubit>()..ouvirEntrega(entrega),
-          child: BlocBuilder<DeliveryDetailsCubit, DeliveryDetailsState>(
-            builder: (context, state) {
-              return switch (state) {
+    final sessionState = context.watch<SessionCubit>().state;
+
+    return BlocProvider(
+      create: (_) => getIt<DeliveryDetailsCubit>()..ouvirEntrega(entrega),
+      child: BlocBuilder<DeliveryDetailsCubit, DeliveryDetailsState>(
+        builder: (context, state) {
+          final entregaAtual = state is DeliveryDetailsLoaded
+              ? state.entrega
+              : null;
+          final usuario = sessionState is SessionAuthenticated
+              ? sessionState.usuario
+              : null;
+          final podeEditar =
+              entregaAtual != null &&
+              usuario != null &&
+              (usuario.isAdmin || entregaAtual.idMotorista == usuario.id);
+
+          return Scaffold(
+            backgroundColor: const Color(0xFFF7F8F5),
+            appBar: const CustomAppBar(
+              title: 'Detalhe da Entrega',
+              leading: true,
+            ),
+            body: SafeArea(
+              child: switch (state) {
                 DeliveryDetailsLoaded(:final entrega) => _buildEntregaContent(
                   entrega,
                 ),
@@ -36,10 +55,22 @@ class EntregaPage extends StatelessWidget {
                   ),
                 ),
                 DeliveryDetailsInitial() => const SizedBox.shrink(),
-              };
-            },
-          ),
-        ),
+              },
+            ),
+            floatingActionButton: podeEditar
+                ? FloatingActionButton(
+                    backgroundColor: Colors.green[700],
+                    foregroundColor: Colors.white,
+                    tooltip: 'Editar entrega',
+                    onPressed: () => context.push(
+                      '/deliveries/${entregaAtual.id}/edit',
+                      extra: entregaAtual,
+                    ),
+                    child: const Icon(Icons.edit),
+                  )
+                : null,
+          );
+        },
       ),
     );
   }

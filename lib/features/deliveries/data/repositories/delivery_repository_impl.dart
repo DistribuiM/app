@@ -81,4 +81,42 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       throw ServerFailure('Não foi possível registrar a entrega. Tente novamente.');
     }
   }
+
+  @override
+  Future<void> atualizarEntrega({
+    required String id,
+    required String dataEntrega,
+    required String idMotorista,
+    required String nomeMotorista,
+    required int quantidadeSacos,
+    required double precoUnitario,
+    required double valorPago,
+    required double valorPendente,
+    required String formaPagamento,
+    required bool pago,
+    required String observacao,
+  }) async {
+    try {
+      await _deliveryRemoteDataSource.atualizarEntrega(
+        id: id,
+        dataEntrega: dataEntrega,
+        idMotorista: idMotorista,
+        nomeMotorista: nomeMotorista,
+        quantidadeSacos: quantidadeSacos,
+        precoUnitario: precoUnitario,
+        valorPago: valorPago,
+        valorPendente: valorPendente,
+        formaPagamento: formaPagamento,
+        pago: pago,
+        observacao: observacao,
+      );
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao atualizar entrega: $e');
+      throw ServerFailure(
+        'Não foi possível atualizar a entrega. Tente novamente.',
+      );
+    }
+  }
 }

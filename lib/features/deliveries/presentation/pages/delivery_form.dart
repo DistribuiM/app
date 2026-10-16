@@ -14,11 +14,14 @@ import '../../../auth/domain/entities/usuario.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../../clients/domain/entities/cliente.dart';
+import '../../domain/entities/entrega.dart';
 import '../cubit/delivery_form_cubit.dart';
 import '../cubit/delivery_form_state.dart';
 
 class DeliveryForm extends StatefulWidget {
-  const DeliveryForm({super.key});
+  const DeliveryForm({super.key, this.entrega});
+
+  final Entrega? entrega;
 
   @override
   State<DeliveryForm> createState() => _DeliveryFormState();
@@ -42,6 +45,32 @@ class _DeliveryFormState extends State<DeliveryForm> {
   int _precoUnitario = 80;
   bool _clientePagou = false;
   int _formaPagamento = 0; // 0=Dinheiro, 1=Pix, 2=Cartão
+  bool _motoristaInicializado = false;
+  List<Usuario> _motoristasCarregados = [];
+  List<Cliente> _clientesCarregados = [];
+
+  @override
+  void initState() {
+    super.initState();
+    final entrega = widget.entrega;
+    if (entrega != null) {
+      _quantidadeController.text = entrega.quantidadeSacos.toString();
+      _clientePagou = entrega.formaPagamento != 'Nenhum';
+      if (_clientePagou) {
+        final valorPago = entrega.valorPago;
+        _valorPagoController.text = valorPago % 1 == 0
+            ? valorPago.toInt().toString()
+            : valorPago.toString();
+      }
+      _observacaoController.text = entrega.observacao;
+      _dataEntrega = entrega.dataEntrega.isEmpty ? null : entrega.dataEntrega;
+      _precoUnitario = entrega.precoUnitario.toInt();
+      const formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
+      final indiceForma = formasPagamento.indexOf(entrega.formaPagamento);
+      _formaPagamento = indiceForma < 0 ? 0 : indiceForma;
+    }
+  }
+
   @override
   void dispose() {
     _quantidadeController.dispose();
@@ -58,13 +87,41 @@ class _DeliveryFormState extends State<DeliveryForm> {
     }
 
     final usuario = sessionState.usuario;
-    _motoristaSelecionado ??= usuario;
+    if (!usuario.isAdmin) {
+      _motoristaSelecionado ??= usuario;
+    }
 
     return BlocProvider<DeliveryFormCubit>(
-      create: (_) => getIt<DeliveryFormCubit>()..carregarDados(usuario),
+      create: (_) =>
+          getIt<DeliveryFormCubit>()
+            ..carregarDados(usuario, incluirClientes: widget.entrega == null),
       child: BlocConsumer<DeliveryFormCubit, DeliveryFormState>(
         listener: (context, state) {
-          if (state is DeliveryFormSuccess) {
+          if (state is DeliveryFormLoaded) {
+            _motoristasCarregados = state.motoristas;
+            _clientesCarregados = state.clientes;
+            if (!_motoristaInicializado) {
+              Usuario? motoristaInicial;
+              if (usuario.isAdmin) {
+                if (widget.entrega == null) {
+                  motoristaInicial = usuario;
+                } else {
+                  for (final motorista in state.motoristas) {
+                    if (motorista.id == widget.entrega!.idMotorista) {
+                      motoristaInicial = motorista;
+                      break;
+                    }
+                  }
+                }
+              } else {
+                motoristaInicial = usuario;
+              }
+              setState(() {
+                _motoristaSelecionado = motoristaInicial;
+                _motoristaInicializado = true;
+              });
+            }
+          } else if (state is DeliveryFormSuccess) {
             context.pop();
           } else if (state is DeliveryFormError) {
             ScaffoldMessenger.of(
@@ -78,19 +135,25 @@ class _DeliveryFormState extends State<DeliveryForm> {
               ? state.motoristas
               : state is DeliveryFormSubmitting
               ? state.motoristas
+              : state is DeliveryFormError
+              ? _motoristasCarregados
               : <Usuario>[];
           final clientes = state is DeliveryFormLoaded
               ? state.clientes
               : state is DeliveryFormSubmitting
               ? state.clientes
+              : state is DeliveryFormError
+              ? _clientesCarregados
               : <Cliente>[];
           final salvando = state is DeliveryFormSubmitting;
           final motoristasPorRotulo = _mapearMotoristas(motoristas);
           final clientesPorRotulo = _mapearClientes(clientes);
 
           return Scaffold(
-            appBar: const CustomAppBar(
-              title: 'Cadastro de Entrega',
+            appBar: CustomAppBar(
+              title: widget.entrega == null
+                  ? 'Cadastro de Entrega'
+                  : 'Editar Entrega',
               leading: true,
             ),
             backgroundColor: const Color(0xFFF7F8F5),
@@ -103,6 +166,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                     const SizedBox(height: 20),
 
                     DateTextField(
+                      initialDate: _dataEntrega,
                       onDateChanged: (data) => setState(() {
                         _dataEntrega = data;
                       }),
@@ -122,13 +186,10 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           ),
                           TextButton(
                             onPressed: () {
-                              setState(() {
-                                _motoristaSelecionado = usuario;
-                                _clienteSelecionado = null;
-                              });
-                              context
-                                  .read<DeliveryFormCubit>()
-                                  .carregarDados(usuario);
+                              context.read<DeliveryFormCubit>().carregarDados(
+                                usuario,
+                                incluirClientes: widget.entrega == null,
+                              );
                             },
                             child: const Text('Tentar novamente'),
                           ),
@@ -153,7 +214,9 @@ class _DeliveryFormState extends State<DeliveryForm> {
                       const SizedBox(height: 20),
 
                     if (!carregando && state is! DeliveryFormLoadError)
-                      clientes.isEmpty
+                      widget.entrega != null
+                          ? _campoCliente(widget.entrega!)
+                          : clientes.isEmpty
                           ? const Center(
                               child: Text('Nenhum cliente cadastrado'),
                             )
@@ -192,6 +255,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                     ),
 
                     CustomSegmentedButton(
+                      initialValue: _precoUnitario,
                       segments: const [
                         Segment(value: 80, label: '80,00'),
                         Segment(value: 90, label: '90,00'),
@@ -208,6 +272,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                     ),
 
                     CustomSegmentedButton(
+                      initialValue: _clientePagou ? 1 : 0,
                       segments: const [
                         Segment(value: 0, label: 'Não'),
                         Segment(value: 1, label: 'Sim'),
@@ -227,6 +292,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             child: const Text("Forma de pagamento*"),
                           ),
                           CustomSegmentedButton(
+                            initialValue: _formaPagamento,
                             segments: const [
                               Segment(value: 0, label: 'Dinheiro'),
                               Segment(value: 1, label: 'Pix'),
@@ -287,7 +353,8 @@ class _DeliveryFormState extends State<DeliveryForm> {
                               : usuario;
                           if (_dataEntrega == null ||
                               motorista == null ||
-                              _clienteSelecionado == null ||
+                              (widget.entrega == null &&
+                                  _clienteSelecionado == null) ||
                               _quantidadeController.text.isEmpty) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
@@ -310,27 +377,44 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           final valorPendente = valorTotal - valorPago;
                           final formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
 
-                          await context
-                              .read<DeliveryFormCubit>()
-                              .registrarEntrega(
-                                dataEntrega: _dataEntrega!,
-                                idMotorista: motorista.id,
-                                nomeMotorista: motorista.nome,
-                                idCliente: _clienteSelecionado!.id,
-                                nomeCliente: _clienteSelecionado!.nome,
-                                cidadeCliente:
-                                    _clienteSelecionado!.endereco.cidade,
-                                quantidadeSacos: quantidade,
-                                precoUnitario: _precoUnitario.toDouble(),
-                                valorPago: valorPago,
-                                valorPendente: valorPendente,
-                                formaPagamento: _clientePagou
-                                    ? formasPagamento[_formaPagamento]
-                                    : 'Nenhum',
-                                pago: valorPendente <= 0,
-                                entregue: true,
-                                observacao: _observacaoController.text,
-                              );
+                          final cubit = context.read<DeliveryFormCubit>();
+                          if (widget.entrega case final entrega?) {
+                            await cubit.atualizarEntrega(
+                              id: entrega.id,
+                              dataEntrega: _dataEntrega!,
+                              idMotorista: motorista.id,
+                              nomeMotorista: motorista.nome,
+                              quantidadeSacos: quantidade,
+                              precoUnitario: _precoUnitario.toDouble(),
+                              valorPago: valorPago,
+                              valorPendente: valorPendente,
+                              formaPagamento: _clientePagou
+                                  ? formasPagamento[_formaPagamento]
+                                  : 'Nenhum',
+                              pago: valorPendente <= 0,
+                              observacao: _observacaoController.text,
+                            );
+                          } else {
+                            final cliente = _clienteSelecionado!;
+                            await cubit.registrarEntrega(
+                              dataEntrega: _dataEntrega!,
+                              idMotorista: motorista.id,
+                              nomeMotorista: motorista.nome,
+                              idCliente: cliente.id,
+                              nomeCliente: cliente.nome,
+                              cidadeCliente: cliente.endereco.cidade,
+                              quantidadeSacos: quantidade,
+                              precoUnitario: _precoUnitario.toDouble(),
+                              valorPago: valorPago,
+                              valorPendente: valorPendente,
+                              formaPagamento: _clientePagou
+                                  ? formasPagamento[_formaPagamento]
+                                  : 'Nenhum',
+                              pago: valorPendente <= 0,
+                              entregue: true,
+                              observacao: _observacaoController.text,
+                            );
+                          }
                         },
 
                   child: salvando
@@ -347,6 +431,48 @@ class _DeliveryFormState extends State<DeliveryForm> {
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _campoCliente(Entrega entrega) {
+    return Container(
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: InputDecorator(
+        decoration: InputDecoration(
+          labelText: 'Cliente',
+          labelStyle: TextStyle(color: Colors.grey[600]),
+          filled: true,
+          fillColor: Colors.white,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 20,
+            vertical: 25,
+          ),
+        ),
+        child: Align(
+          alignment: Alignment.centerLeft,
+          child: Text(
+            '${entrega.nomeCliente} - ${entrega.cidadeCliente}',
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
       ),
     );
   }

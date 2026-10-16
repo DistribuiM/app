@@ -23,4 +23,18 @@ abstract class DeliveryRepository {
     required bool entregue,
     required String observacao,
   });
+
+  Future<void> atualizarEntrega({
+    required String id,
+    required String dataEntrega,
+    required String idMotorista,
+    required String nomeMotorista,
+    required int quantidadeSacos,
+    required double precoUnitario,
+    required double valorPago,
+    required double valorPendente,
+    required String formaPagamento,
+    required bool pago,
+    required String observacao,
+  });
 }

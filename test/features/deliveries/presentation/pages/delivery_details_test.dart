@@ -1,15 +1,22 @@
 import 'package:app_distribuim/core/di/injection_container.dart';
+import 'package:app_distribuim/features/auth/domain/entities/usuario.dart';
+import 'package:app_distribuim/features/auth/presentation/cubit/session_cubit.dart';
+import 'package:app_distribuim/features/auth/presentation/cubit/session_state.dart';
 import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_cubit.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_state.dart';
 import 'package:app_distribuim/features/deliveries/presentation/pages/delivery_details.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
 class MockDeliveryDetailsCubit extends MockCubit<DeliveryDetailsState>
     implements DeliveryDetailsCubit {}
+
+class MockSessionCubit extends MockCubit<SessionState>
+    implements SessionCubit {}
 
 late MockDeliveryDetailsCubit deliveryDetailsCubit;
 
@@ -37,8 +44,30 @@ Entrega _makeEntrega({
   );
 }
 
-Widget _buildPage(Entrega entrega) {
-  return MaterialApp(home: EntregaPage(entrega: entrega));
+Widget _buildPage(Entrega entrega, Usuario usuario) {
+  final sessionCubit = MockSessionCubit();
+  whenListen(
+    sessionCubit,
+    const Stream<SessionState>.empty(),
+    initialState: SessionAuthenticated(usuario),
+  );
+
+  return BlocProvider<SessionCubit>.value(
+    value: sessionCubit,
+    child: MaterialApp(home: EntregaPage(entrega: entrega)),
+  );
+}
+
+Usuario _usuario({
+  String id = 'motorista-1',
+  CargoUsuario cargo = CargoUsuario.motorista,
+}) {
+  return Usuario(
+    id: id,
+    nome: 'Usuario',
+    email: 'usuario@example.com',
+    cargo: cargo,
+  );
 }
 
 void main() {
@@ -64,7 +93,7 @@ void main() {
   testWidgets('exibe os dados da entrega e do pagamento', (tester) async {
     final entrega = _makeEntrega();
     registerCubit(DeliveryDetailsLoaded(entrega), entrega);
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     for (final texto in [
       'Detalhe da Entrega',
@@ -89,7 +118,7 @@ void main() {
   testWidgets('exibe o estado pago e não entregue', (tester) async {
     final entrega = _makeEntrega(pago: true, entregue: false);
     registerCubit(DeliveryDetailsLoaded(entrega), entrega);
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     expect(find.text('Pago'), findsOneWidget);
     expect(find.text('Não entregue'), findsOneWidget);
@@ -98,7 +127,7 @@ void main() {
   testWidgets('omite observação vazia ou só com espaços', (tester) async {
     final entrega = _makeEntrega(observacao: '   \n ');
     registerCubit(DeliveryDetailsLoaded(entrega), entrega);
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     expect(find.text('Observação'), findsNothing);
   });
@@ -106,7 +135,7 @@ void main() {
   testWidgets('exibe observação preenchida', (tester) async {
     final entrega = _makeEntrega(observacao: 'Entregar no portão lateral');
     registerCubit(DeliveryDetailsLoaded(entrega), entrega);
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     await tester.scrollUntilVisible(
       find.text('Entregar no portão lateral'),
@@ -121,9 +150,10 @@ void main() {
   testWidgets('exibe mensagem quando a entrega não existe', (tester) async {
     final entrega = _makeEntrega();
     registerCubit(DeliveryDetailsNotFound(), entrega);
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     expect(find.text('Entrega não encontrada'), findsOneWidget);
+    expect(find.byTooltip('Editar entrega'), findsNothing);
   });
 
   testWidgets('exibe a mensagem de erro do estado', (tester) async {
@@ -132,8 +162,37 @@ void main() {
       const DeliveryDetailsError('Falha ao carregar entrega'),
       entrega,
     );
-    await tester.pumpWidget(_buildPage(entrega));
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
 
     expect(find.text('Falha ao carregar entrega'), findsOneWidget);
+    expect(find.byTooltip('Editar entrega'), findsNothing);
+  });
+
+  testWidgets('admin pode editar qualquer entrega', (tester) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(
+      _buildPage(entrega, _usuario(id: 'admin-1', cargo: CargoUsuario.admin)),
+    );
+
+    expect(find.byTooltip('Editar entrega'), findsOneWidget);
+  });
+
+  testWidgets('motorista pode editar a própria entrega', (tester) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
+
+    expect(find.byTooltip('Editar entrega'), findsOneWidget);
+  });
+
+  testWidgets('motorista não pode editar entrega de outro motorista', (
+    tester,
+  ) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega, _usuario(id: 'outro-1')));
+
+    expect(find.byTooltip('Editar entrega'), findsNothing);
   });
 }

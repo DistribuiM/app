@@ -81,6 +81,13 @@ GoRouter createAppRouter(SessionCubit session) {
         builder: (context, state) => const DeliveryForm(),
       ),
       GoRoute(
+        path: '/deliveries/:id/edit',
+        redirect: (context, state) =>
+            state.extra is Entrega ? null : '/',
+        builder: (context, state) =>
+            DeliveryForm(entrega: state.extra as Entrega),
+      ),
+      GoRoute(
         path: '/deliveries/:id',
         redirect: (context, state) =>
             state.extra is Entrega ? null : '/',

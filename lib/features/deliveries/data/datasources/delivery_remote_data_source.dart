@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../../../core/error/failures.dart';
 import '../../domain/entities/entrega.dart';
 
 class DeliveryRemoteDataSource {
@@ -58,6 +59,59 @@ class DeliveryRemoteDataSource {
     await batch.commit();
 
     debugPrint("SUCESSO: Nova entrega registrada perfeitamente!");
+  }
+
+  Future<void> atualizarEntrega({
+    required String id,
+    required String dataEntrega,
+    required String idMotorista,
+    required String nomeMotorista,
+    required int quantidadeSacos,
+    required double precoUnitario,
+    required double valorPago,
+    required double valorPendente,
+    required String formaPagamento,
+    required bool pago,
+    required String observacao,
+  }) async {
+    final entregaRef = _db.collection('entregas').doc(id);
+    await _db.runTransaction<void>((transaction) async {
+      final entregaDoc = await transaction.get(entregaRef);
+      if (!entregaDoc.exists) {
+        throw const ValidationFailure(
+          'Esta entrega não foi encontrada. Ela pode ter sido removida.',
+        );
+      }
+
+      final dados = entregaDoc.data()!;
+      final cliente = dados['cliente'] as Map<String, dynamic>? ?? {};
+      final financeiro = dados['financeiro'] as Map<String, dynamic>? ?? {};
+      final idCliente = cliente['id'] as String;
+      final valorPendenteAntigo =
+          (financeiro['valorPendente'] as num?)?.toDouble() ?? 0.0;
+      final diferenca = valorPendente - valorPendenteAntigo;
+
+      transaction.update(entregaRef, {
+        'dataEntrega': dataEntrega,
+        'motorista.id': idMotorista,
+        'motorista.nome': nomeMotorista,
+        'quantidadeSacos': quantidadeSacos,
+        'financeiro.precoUnitario': precoUnitario,
+        'financeiro.valorTotal': quantidadeSacos * precoUnitario,
+        'financeiro.valorPago': valorPago,
+        'financeiro.valorPendente': valorPendente,
+        'formaPagamento': formaPagamento,
+        'status.pago': pago,
+        'observacao': observacao,
+      });
+      if (diferenca != 0) {
+        transaction.update(_db.collection('clientes').doc(idCliente), {
+          'financeiro.saldoPendente': FieldValue.increment(diferenca),
+        });
+      }
+    });
+
+    debugPrint('SUCESSO: Entrega atualizada perfeitamente!');
   }
 
   // Ouve todas as entregas em tempo real
