@@ -88,11 +88,15 @@ class EntregaPage extends StatelessWidget {
             children: [
               Icon(Icons.person, color: Colors.green[700], size: 28),
               const SizedBox(width: 8),
-              Text(
-                entrega.nomeCliente,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  entrega.nomeCliente,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

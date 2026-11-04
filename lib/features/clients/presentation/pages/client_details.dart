@@ -32,18 +32,24 @@ class _ClientePageState extends State<ClientePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Icon(Icons.person, color: Colors.green[700], size: 28),
-                      const SizedBox(width: 8),
-                      Text(
-                        cliente.nome,
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Icon(Icons.person, color: Colors.green[700], size: 28),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            cliente.nome,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 22,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                   IconButton(
                     onPressed: () {}, // abrir formulário de entrega

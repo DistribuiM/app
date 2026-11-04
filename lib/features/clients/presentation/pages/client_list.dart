@@ -117,13 +117,14 @@ class ClientList extends StatelessWidget {
                                                 color: Colors.green[700],
                                               ),
                                               const SizedBox(width: 8),
-                                              Text(
-                                                cliente.nome,
-                                                style: const TextStyle(
-                                                  fontSize: 18,
-                                                  fontWeight: FontWeight.bold,
+                                              Expanded(
+                                                  child: Text(
+                                                    cliente.nome,
+                                                    maxLines: 2,
+                                                    overflow: TextOverflow.ellipsis,
+                                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                                  ),
                                                 ),
-                                              ),
                                             ],
                                           ),
                                           const SizedBox(height: 8),
