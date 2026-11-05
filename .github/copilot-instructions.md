@@ -24,9 +24,16 @@ Login (Google) -> Home com 2 abas: Clientes e Entregas.
   (motoristaId, motoristaNome); NÃO importa Usuario de auth.
   Entrega.valorTotal é calculado (quantidadeSacos * precoUnitario), não
   lido do Firestore.
-- Pagamento não é feature nem entidade própria: valor pago e forma de
-  pagamento são campos de Entrega. A tela payment_form.dart está fora de
-  escopo: não editar nem usar como referência.
+- Pagamento: feature `payments` (entidade Pagamento: id, data, motorista,
+  cliente, valor, formaPagamento). Pagamentos AVULSOS vão para a coleção
+  'pagamentos' (registrados pelo DeliveryForm no modo Pagamento, via
+  DeliveryFormCubit.registrarPagamento e PaymentRepository). Pagamentos
+  feitos junto com uma entrega continuam como campos de Entrega. Um
+  pagamento avulso abate clientes.financeiro.saldoPendente
+  (FieldValue.increment(-valor), em batch) e pode deixar o saldo negativo;
+  não marca entregas como pagas. O comprovante não é gravado. A tela
+  payment_form.dart está fora de escopo: não editar nem usar como
+  referência.
 
 # Arquitetura
 Clean Architecture feature-first. Features: auth, home, clients,
@@ -118,6 +125,12 @@ existindo para o DeliveryFormCubit.
   O detalhe da entrega ouve o documento por id (DeliveryDetailsCubit) e se
   atualiza sozinho. Limitações conhecidas: "Local da Entrega" e o
   comprovante não são gravados; a ficha do cliente não se atualiza sozinha.
+- DeliveryForm com dois tipos (seletor Entrega/Pagamento, só no cadastro;
+  na edição de entrega o seletor não aparece). No modo Pagamento somem
+  local, quantidade, preço, "cliente fez algum pagamento?" e observação, e
+  o valor deve ser maior que zero. Motorista e cliente seguem as mesmas
+  regras da entrega (admin escolhe o motorista, pré-selecionado; motorista
+  só vê os clientes dele).
 
 # Formulários e dropdowns
 - O widget Dropdown (core/widgets) trabalha com List<String>. Nunca
