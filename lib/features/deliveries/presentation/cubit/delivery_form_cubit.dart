@@ -6,6 +6,7 @@ import '../../../auth/domain/repositories/usuario_repository.dart';
 import '../../../clients/domain/entities/cliente.dart';
 import '../../../clients/domain/repositories/client_repository.dart';
 import '../../domain/repositories/delivery_repository.dart';
+import '../../../payments/domain/repositories/payment_repository.dart';
 import 'delivery_form_state.dart';
 
 class DeliveryFormCubit extends Cubit<DeliveryFormState> {
@@ -13,11 +14,13 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
     this._deliveryRepository,
     this._clientRepository,
     this._usuarioRepository,
+    this._paymentRepository,
   ) : super(DeliveryFormLoading());
 
   final DeliveryRepository _deliveryRepository;
   final ClientRepository _clientRepository;
   final UsuarioRepository _usuarioRepository;
+  final PaymentRepository _paymentRepository;
 
   Future<void> carregarDados(
     Usuario usuario, {
@@ -87,6 +90,45 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
         pago: pago,
         entregue: entregue,
         observacao: observacao,
+      );
+      emit(DeliveryFormSuccess());
+    } catch (e) {
+      if (e is Failure) {
+        emit(DeliveryFormError(e.message));
+      } else {
+        emit(const DeliveryFormError('Erro inesperado. Tente novamente.'));
+      }
+      emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
+    }
+  }
+
+  Future<void> registrarPagamento({
+    required String data,
+    required String idMotorista,
+    required String nomeMotorista,
+    required String idCliente,
+    required String nomeCliente,
+    required String cidadeCliente,
+    required double valor,
+    required String formaPagamento,
+  }) async {
+    final currentState = state;
+    if (currentState is! DeliveryFormLoaded) return;
+
+    final motoristas = currentState.motoristas;
+    final clientes = currentState.clientes;
+    emit(DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes));
+
+    try {
+      await _paymentRepository.registrarPagamento(
+        data: data,
+        idMotorista: idMotorista,
+        nomeMotorista: nomeMotorista,
+        idCliente: idCliente,
+        nomeCliente: nomeCliente,
+        cidadeCliente: cidadeCliente,
+        valor: valor,
+        formaPagamento: formaPagamento,
       );
       emit(DeliveryFormSuccess());
     } catch (e) {

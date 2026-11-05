@@ -21,12 +21,17 @@ import '../../features/deliveries/presentation/cubit/client_deliveries_cubit.dar
 import '../../features/deliveries/presentation/cubit/delivery_details_cubit.dart';
 import '../../features/deliveries/presentation/cubit/delivery_form_cubit.dart';
 import '../../features/deliveries/presentation/cubit/delivery_list_cubit.dart';
+import '../../features/payments/data/datasources/payment_remote_data_source.dart';
+import '../../features/payments/data/repositories/payment_repository_impl.dart';
+import '../../features/payments/domain/repositories/payment_repository.dart';
 
 final getIt = GetIt.instance;
 
 void setupDependencies() {
   if (!getIt.isRegistered<AuthRemoteDataSource>()) {
-    getIt.registerLazySingleton<AuthRemoteDataSource>(() => AuthRemoteDataSource());
+    getIt.registerLazySingleton<AuthRemoteDataSource>(
+      () => AuthRemoteDataSource(),
+    );
   }
 
   if (!getIt.isRegistered<UsuarioRemoteDataSource>()) {
@@ -44,6 +49,12 @@ void setupDependencies() {
   if (!getIt.isRegistered<DeliveryRemoteDataSource>()) {
     getIt.registerLazySingleton<DeliveryRemoteDataSource>(
       () => DeliveryRemoteDataSource(),
+    );
+  }
+
+  if (!getIt.isRegistered<PaymentRemoteDataSource>()) {
+    getIt.registerLazySingleton<PaymentRemoteDataSource>(
+      () => PaymentRemoteDataSource(),
     );
   }
 
@@ -71,6 +82,12 @@ void setupDependencies() {
   if (!getIt.isRegistered<DeliveryRepository>()) {
     getIt.registerLazySingleton<DeliveryRepository>(
       () => DeliveryRepositoryImpl(getIt<DeliveryRemoteDataSource>()),
+    );
+  }
+
+  if (!getIt.isRegistered<PaymentRepository>()) {
+    getIt.registerLazySingleton<PaymentRepository>(
+      () => PaymentRepositoryImpl(getIt<PaymentRemoteDataSource>()),
     );
   }
 
@@ -126,6 +143,7 @@ void setupDependencies() {
         getIt<DeliveryRepository>(),
         getIt<ClientRepository>(),
         getIt<UsuarioRepository>(),
+        getIt<PaymentRepository>(),
       ),
     );
   }

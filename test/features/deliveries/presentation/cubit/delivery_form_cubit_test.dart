@@ -7,6 +7,7 @@ import 'package:app_distribuim/features/clients/domain/repositories/client_repos
 import 'package:app_distribuim/features/deliveries/domain/repositories/delivery_repository.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_form_cubit.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_form_state.dart';
+import 'package:app_distribuim/features/payments/domain/repositories/payment_repository.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
@@ -17,10 +18,13 @@ class MockClientRepository extends Mock implements ClientRepository {}
 
 class MockUsuarioRepository extends Mock implements UsuarioRepository {}
 
+class MockPaymentRepository extends Mock implements PaymentRepository {}
+
 void main() {
   late MockDeliveryRepository deliveryRepository;
   late MockClientRepository clientRepository;
   late MockUsuarioRepository usuarioRepository;
+  late MockPaymentRepository paymentRepository;
 
   final admin = Usuario(
     id: 'admin-1',
@@ -68,6 +72,7 @@ void main() {
     deliveryRepository = MockDeliveryRepository();
     clientRepository = MockClientRepository();
     usuarioRepository = MockUsuarioRepository();
+    paymentRepository = MockPaymentRepository();
   });
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
@@ -83,6 +88,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(admin),
@@ -111,6 +117,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(motorista),
@@ -136,6 +143,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(admin, incluirClientes: false),
@@ -158,6 +166,7 @@ void main() {
       deliveryRepository,
       clientRepository,
       usuarioRepository,
+      paymentRepository,
     ),
     act: (cubit) => cubit.carregarDados(motorista, incluirClientes: false),
     expect: () => [
@@ -182,6 +191,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(admin),
@@ -205,6 +215,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(admin),
@@ -227,6 +238,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(motorista),
@@ -249,6 +261,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     act: (cubit) => cubit.carregarDados(motorista),
@@ -292,6 +305,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -348,6 +362,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -422,6 +437,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -475,6 +491,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -544,6 +561,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -579,6 +597,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -632,6 +651,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -680,6 +700,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -716,6 +737,7 @@ void main() {
         deliveryRepository,
         clientRepository,
         usuarioRepository,
+        paymentRepository,
       );
     },
     seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
@@ -733,6 +755,7 @@ void main() {
       deliveryRepository,
       clientRepository,
       usuarioRepository,
+      paymentRepository,
     ),
     act: _atualizarEntrega,
     expect: () => <DeliveryFormState>[],
@@ -751,6 +774,147 @@ void main() {
         observacao: 'Revisada',
       ),
     ),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'registrarPagamento emite Submitting e Success e repassa os valores',
+    build: () {
+      when(
+        () => paymentRepository.registrarPagamento(
+          data: '04/11/2026',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          valor: 50.5,
+          formaPagamento: 'Pix',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+        paymentRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _registrarPagamento,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+    verify: (_) => verify(
+      () => paymentRepository.registrarPagamento(
+        data: '04/11/2026',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        idCliente: 'cliente-1',
+        nomeCliente: 'Cliente',
+        cidadeCliente: 'Cidade',
+        valor: 50.5,
+        formaPagamento: 'Pix',
+      ),
+    ).called(1),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'registrarPagamento preserva Failure e retorna a Loaded',
+    build: () {
+      when(
+        () => paymentRepository.registrarPagamento(
+          data: '04/11/2026',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          valor: 50.5,
+          formaPagamento: 'Pix',
+        ),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+        paymentRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _registrarPagamento,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError('msg'),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'registrarPagamento usa mensagem genérica para Exception',
+    build: () {
+      when(
+        () => paymentRepository.registrarPagamento(
+          data: '04/11/2026',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          valor: 50.5,
+          formaPagamento: 'Pix',
+        ),
+      ).thenThrow(Exception('falha'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+        paymentRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _registrarPagamento,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError('Erro inesperado. Tente novamente.'),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'registrarPagamento ignora estados diferentes de Loaded',
+    build: () => DeliveryFormCubit(
+      deliveryRepository,
+      clientRepository,
+      usuarioRepository,
+      paymentRepository,
+    ),
+    act: _registrarPagamento,
+    expect: () => <DeliveryFormState>[],
+    verify: (_) => verifyNever(
+      () => paymentRepository.registrarPagamento(
+        data: '04/11/2026',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        idCliente: 'cliente-1',
+        nomeCliente: 'Cliente',
+        cidadeCliente: 'Cidade',
+        valor: 50.5,
+        formaPagamento: 'Pix',
+      ),
+    ),
+  );
+}
+
+Future<void> _registrarPagamento(DeliveryFormCubit cubit) {
+  return cubit.registrarPagamento(
+    data: '04/11/2026',
+    idMotorista: 'motorista-1',
+    nomeMotorista: 'Motorista',
+    idCliente: 'cliente-1',
+    nomeCliente: 'Cliente',
+    cidadeCliente: 'Cidade',
+    valor: 50.5,
+    formaPagamento: 'Pix',
   );
 }
 
