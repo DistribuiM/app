@@ -1,4 +1,5 @@
 import '../entities/entrega.dart';
+import 'dart:typed_data';
 
 abstract class DeliveryRepository {
   Stream<List<Entrega>> ouvirEntregas({String? idMotorista});
@@ -22,6 +23,7 @@ abstract class DeliveryRepository {
     required bool pago,
     required bool entregue,
     required String observacao,
+    Uint8List? comprovanteBytes,
   });
 
   Future<void> atualizarEntrega({
@@ -37,4 +39,5 @@ abstract class DeliveryRepository {
     required bool pago,
     required String observacao,
   });
+  Future<Uint8List?> buscarComprovante(String idEntrega);
 }

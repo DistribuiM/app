@@ -56,7 +56,13 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
     required bool pago,
     required bool entregue,
     required String observacao,
+    Uint8List? comprovanteBytes,
   }) async {
+    if (comprovanteBytes != null && comprovanteBytes.length > 900 * 1024) {
+      throw const ValidationFailure(
+        'O comprovante é muito grande. Escolha uma imagem menor.',
+      );
+    }
     try {
       await _deliveryRemoteDataSource.registrarEntrega(
         dataEntrega: dataEntrega,
@@ -73,6 +79,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
         pago: pago,
         entregue: entregue,
         observacao: observacao,
+        comprovanteBytes: comprovanteBytes,
       );
     } on Failure {
       rethrow;
@@ -117,6 +124,17 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       throw ServerFailure(
         'Não foi possível atualizar a entrega. Tente novamente.',
       );
+    }
+  }
+  @override
+  Future<Uint8List?> buscarComprovante(String idEntrega) async {
+    try {
+      return await _deliveryRemoteDataSource.buscarComprovante(idEntrega);
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao buscar comprovante: $e');
+      throw ServerFailure('Não foi possível carregar o comprovante.');
     }
   }
 }
