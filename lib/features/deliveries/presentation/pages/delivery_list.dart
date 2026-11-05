@@ -187,7 +187,16 @@ class _DeliveryListState extends State<DeliveryList> {
                           },
                           cells: [
                             DataCell(Text(entrega.dataEntrega)),
-                            DataCell(Text(entrega.nomeCliente)),
+                            DataCell(
+                              ConstrainedBox(
+                                constraints: const BoxConstraints(maxWidth: 180),
+                                child: Text(
+                                  entrega.nomeCliente,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ),
                             DataCell(Text("${entrega.quantidadeSacos}")),
                             DataCell(
                               Text(
