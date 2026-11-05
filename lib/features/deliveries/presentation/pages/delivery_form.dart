@@ -28,6 +28,9 @@ class DeliveryForm extends StatefulWidget {
 }
 
 class _DeliveryFormState extends State<DeliveryForm> {
+  int _tipo = 0;
+  bool get _ehPagamento => widget.entrega == null && _tipo == 1;
+
   final List<Segment> segments = const [
     Segment(value: 0, label: 'Entrega de Milho', icon: Icons.local_shipping),
     Segment(value: 1, label: 'Pagamento', icon: Icons.attach_money),
@@ -151,9 +154,11 @@ class _DeliveryFormState extends State<DeliveryForm> {
 
           return Scaffold(
             appBar: CustomAppBar(
-              title: widget.entrega == null
-                  ? 'Cadastro de Entrega'
-                  : 'Editar Entrega',
+              title: widget.entrega != null
+                  ? 'Editar Entrega'
+                  : _ehPagamento
+                  ? 'Cadastro de Pagamento'
+                  : 'Cadastro de Entrega',
               leading: true,
             ),
             backgroundColor: const Color(0xFFF7F8F5),
@@ -162,8 +167,15 @@ class _DeliveryFormState extends State<DeliveryForm> {
                 padding: const EdgeInsets.all(36),
                 child: Column(
                   children: [
-                    CustomSegmentedButton(segments: segments),
-                    const SizedBox(height: 20),
+                    if (widget.entrega == null) ...[
+                      CustomSegmentedButton(
+                        segments: segments,
+                        initialValue: _tipo,
+                        onSelectionChanged: (valor) =>
+                            setState(() => _tipo = valor),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     DateTextField(
                       initialDate: _dataEntrega,
@@ -234,56 +246,58 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             ),
                     const SizedBox(height: 20),
 
-                    const Dropdown(
-                      options: ["Endereço do cliente", "Galpão", "Feira"],
-                      hintText: "Local da Entrega*",
-                    ),
-                    const SizedBox(height: 20),
+                    if (!_ehPagamento) ...[
+                      const Dropdown(
+                        options: ["Endereço do cliente", "Galpão", "Feira"],
+                        hintText: "Local da Entrega*",
+                      ),
+                      const SizedBox(height: 20),
 
-                    Input(
-                      label: 'Quantidade de Milho*',
-                      hintText: '',
-                      numberInput: true,
-                      controller: _quantidadeController,
-                    ),
-                    const SizedBox(height: 20),
+                      Input(
+                        label: 'Quantidade de Milho*',
+                        hintText: '',
+                        numberInput: true,
+                        controller: _quantidadeController,
+                      ),
+                      const SizedBox(height: 20),
 
-                    Container(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      alignment: Alignment.centerLeft,
-                      child: const Text("Preço do Milho*"),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        alignment: Alignment.centerLeft,
+                        child: const Text("Preço do Milho*"),
+                      ),
 
-                    CustomSegmentedButton(
-                      initialValue: _precoUnitario,
-                      segments: const [
-                        Segment(value: 80, label: '80,00'),
-                        Segment(value: 90, label: '90,00'),
-                      ],
-                      onSelectionChanged: (valor) =>
-                          setState(() => _precoUnitario = valor),
-                    ),
-                    const SizedBox(height: 20),
+                      CustomSegmentedButton(
+                        initialValue: _precoUnitario,
+                        segments: const [
+                          Segment(value: 80, label: '80,00'),
+                          Segment(value: 90, label: '90,00'),
+                        ],
+                        onSelectionChanged: (valor) =>
+                            setState(() => _precoUnitario = valor),
+                      ),
+                      const SizedBox(height: 20),
 
-                    Container(
-                      padding: const EdgeInsets.only(bottom: 8),
-                      alignment: Alignment.centerLeft,
-                      child: const Text("Cliente fez algum pagamento?*"),
-                    ),
+                      Container(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        alignment: Alignment.centerLeft,
+                        child: const Text("Cliente fez algum pagamento?*"),
+                      ),
 
-                    CustomSegmentedButton(
-                      initialValue: _clientePagou ? 1 : 0,
-                      segments: const [
-                        Segment(value: 0, label: 'Não'),
-                        Segment(value: 1, label: 'Sim'),
-                      ],
-                      onSelectionChanged: (valor) =>
-                          setState(() => _clientePagou = valor == 1),
-                    ),
-                    const SizedBox(height: 20),
+                      CustomSegmentedButton(
+                        initialValue: _clientePagou ? 1 : 0,
+                        segments: const [
+                          Segment(value: 0, label: 'Não'),
+                          Segment(value: 1, label: 'Sim'),
+                        ],
+                        onSelectionChanged: (valor) =>
+                            setState(() => _clientePagou = valor == 1),
+                      ),
+                      const SizedBox(height: 20),
+                    ],
 
                     Visibility(
-                      visible: _clientePagou,
+                      visible: _ehPagamento || _clientePagou,
                       child: Column(
                         children: [
                           Container(
@@ -323,11 +337,12 @@ class _DeliveryFormState extends State<DeliveryForm> {
                         ],
                       ),
                     ),
-                    Input(
-                      label: 'Observação',
-                      hintText: '',
-                      controller: _observacaoController,
-                    ),
+                    if (!_ehPagamento)
+                      Input(
+                        label: 'Observação',
+                        hintText: '',
+                        controller: _observacaoController,
+                      ),
                   ],
                 ),
               ),
@@ -351,6 +366,53 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           final motorista = usuario.isAdmin
                               ? _motoristaSelecionado
                               : usuario;
+
+                          if (_ehPagamento) {
+                            if (_dataEntrega == null ||
+                                motorista == null ||
+                                _clienteSelecionado == null) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    "Preencha todos os campos obrigatórios!",
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final valor = _lerValor(_valorPagoController.text);
+                            if (valor == null || valor <= 0) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Informe um valor de pagamento maior que zero.',
+                                  ),
+                                ),
+                              );
+                              return;
+                            }
+
+                            final cliente = _clienteSelecionado!;
+                            await context
+                                .read<DeliveryFormCubit>()
+                                .registrarPagamento(
+                                  data: _dataEntrega!,
+                                  idMotorista: motorista.id,
+                                  nomeMotorista: motorista.nome,
+                                  idCliente: cliente.id,
+                                  nomeCliente: cliente.nome,
+                                  cidadeCliente: cliente.endereco.cidade,
+                                  valor: valor,
+                                  formaPagamento: const [
+                                    'Dinheiro',
+                                    'Pix',
+                                    'Cartão',
+                                  ][_formaPagamento],
+                                );
+                            return;
+                          }
+
                           if (_dataEntrega == null ||
                               motorista == null ||
                               (widget.entrega == null &&
@@ -365,12 +427,10 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             );
                             return;
                           }
-
                           final quantidade =
                               int.tryParse(_quantidadeController.text) ?? 0;
                           final valorPago = _clientePagou
-                              ? (double.tryParse(_valorPagoController.text) ??
-                                    0.0)
+                              ? (_lerValor(_valorPagoController.text) ?? 0.0)
                               : 0.0;
                           final valorTotal =
                               quantidade * _precoUnitario.toDouble();
@@ -434,6 +494,10 @@ class _DeliveryFormState extends State<DeliveryForm> {
         },
       ),
     );
+  }
+
+  double? _lerValor(String texto) {
+    return double.tryParse(texto.trim().replaceAll(',', '.'));
   }
 
   Widget _campoCliente(Entrega entrega) {
