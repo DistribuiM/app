@@ -94,9 +94,6 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                   ),
                   duration: const Duration(milliseconds: 200),
                   builder: (context, progress, child) {
-                    final selectedColor = Colors.black.withValues(
-                      alpha: 0.12 * progress,
-                    );
                     return DataTable(
                       showCheckboxColumn: false,
                       headingRowColor: WidgetStatePropertyAll(Colors.grey[100]),
@@ -131,12 +128,7 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                         return DataRow(
                           selected: _selectedEntregaId == entrega.id,
                           color: _selectedEntregaId == entrega.id
-                              ? WidgetStateProperty.resolveWith((states) {
-                                  if (states.contains(WidgetState.selected)) {
-                                    return selectedColor;
-                                  }
-                                  return null;
-                                })
+                              ? dataRowSelectedColor
                               : dataRowPressColor,
                           onSelectChanged: (selected) {
                             if (selected == true) {
