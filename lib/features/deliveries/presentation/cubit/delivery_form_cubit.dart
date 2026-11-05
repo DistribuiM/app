@@ -7,6 +7,7 @@ import '../../../clients/domain/entities/cliente.dart';
 import '../../../clients/domain/repositories/client_repository.dart';
 import '../../domain/repositories/delivery_repository.dart';
 import 'delivery_form_state.dart';
+import 'dart:typed_data';
 
 class DeliveryFormCubit extends Cubit<DeliveryFormState> {
   DeliveryFormCubit(
@@ -62,6 +63,7 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
     required bool pago,
     required bool entregue,
     required String observacao,
+    Uint8List? comprovanteBytes,
   }) async {
     final currentState = state;
     if (currentState is! DeliveryFormLoaded) return;
@@ -86,6 +88,7 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
         pago: pago,
         entregue: entregue,
         observacao: observacao,
+        comprovanteBytes: comprovanteBytes,
       );
       emit(DeliveryFormSuccess());
     } catch (e) {

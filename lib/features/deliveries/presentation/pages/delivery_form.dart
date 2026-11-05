@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/seletor_imagem.dart';
@@ -46,6 +47,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
   bool _clientePagou = false;
   int _formaPagamento = 0; // 0=Dinheiro, 1=Pix, 2=Cartão
   bool _motoristaInicializado = false;
+  XFile? _comprovante;
   List<Usuario> _motoristasCarregados = [];
   List<Cliente> _clientesCarregados = [];
 
@@ -313,11 +315,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           const SizedBox(height: 20),
 
                           SeletorImagem(
-                            onImageSelected: (imagemSelecionada) {
-                              debugPrint(
-                                "Foto capturada com sucesso: ${imagemSelecionada.path}",
-                              );
-                            },
+                            onImageSelected: (imagem) => _comprovante = imagem,
                           ),
                           const SizedBox(height: 20),
                         ],
@@ -392,7 +390,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                                   ? formasPagamento[_formaPagamento]
                                   : 'Nenhum',
                               pago: valorPendente <= 0,
-                              observacao: _observacaoController.text,
+                              observacao: _observacaoController.text, 
                             );
                           } else {
                             final cliente = _clienteSelecionado!;
@@ -413,6 +411,9 @@ class _DeliveryFormState extends State<DeliveryForm> {
                               pago: valorPendente <= 0,
                               entregue: true,
                               observacao: _observacaoController.text,
+                              comprovanteBytes: _clientePagou
+                                  ? await _comprovante?.readAsBytes()
+                                  : null,
                             );
                           }
                         },

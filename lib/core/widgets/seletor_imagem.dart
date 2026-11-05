@@ -17,7 +17,12 @@ class _SeletorImagemState extends State<SeletorImagem> {
   final ImagePicker _picker = ImagePicker();
 
   Future<void> _escolherImagem() async {
-    final XFile? imagem = await _picker.pickImage(source: ImageSource.gallery);
+    final XFile? imagem = await _picker.pickImage(
+      source: ImageSource.gallery,
+      maxWidth: 1024,
+      maxHeight: 1024,
+      imageQuality: 70,
+    );
     
     if (imagem != null) {
       setState(() {

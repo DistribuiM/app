@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'dart:convert';
 
 import '../../../../core/error/failures.dart';
 import '../../domain/entities/entrega.dart';
@@ -22,6 +23,7 @@ class DeliveryRemoteDataSource {
     required bool pago,
     required bool entregue,
     required String observacao,
+    Uint8List? comprovanteBytes,
   }) async {
     // doc() vazio faz com que o Firebase crie um id único
     final docRef = _db.collection('entregas').doc();
@@ -51,8 +53,15 @@ class DeliveryRemoteDataSource {
         "pago": pago,
         "entregue": entregue,
       },
-      "observacao": observacao
+      "observacao": observacao,
+      "temComprovante": comprovanteBytes != null,
     });
+    if (comprovanteBytes != null) {
+      batch.set(_db.collection('comprovantes').doc(docRef.id), {
+        "imagem": base64Encode(comprovanteBytes),
+        "criadoEm": FieldValue.serverTimestamp(),
+      });
+    }
     batch.update(_db.collection('clientes').doc(idCliente), {
       'financeiro.saldoPendente': FieldValue.increment(valorPendente),
     });
@@ -163,5 +172,10 @@ class DeliveryRemoteDataSource {
           return Entrega.fromMap(doc.data(), doc.id);
         }).toList();
       });
+  }
+  Future<Uint8List?> buscarComprovante(String idEntrega) async {
+    final doc = await _db.collection('comprovantes').doc(idEntrega).get();
+    if (!doc.exists) return null;
+    return base64Decode(doc.data()!['imagem'] as String);
   }
 }

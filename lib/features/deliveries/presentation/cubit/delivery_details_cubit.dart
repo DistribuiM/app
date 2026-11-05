@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:typed_data';
 
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -13,10 +14,15 @@ class DeliveryDetailsCubit extends Cubit<DeliveryDetailsState> {
 
   final DeliveryRepository _deliveryRepository;
   StreamSubscription<Entrega?>? _subscription;
+  Uint8List? _comprovante;
+  String? _comprovanteErro;
 
   void ouvirEntrega(Entrega inicial) {
     _subscription?.cancel();
     emit(DeliveryDetailsLoaded(inicial));
+    if (inicial.temComprovante) {
+      carregarComprovante(inicial.id);
+    }
     _subscription = _deliveryRepository
         .ouvirEntrega(inicial.id)
         .listen(
@@ -24,7 +30,7 @@ class DeliveryDetailsCubit extends Cubit<DeliveryDetailsState> {
             if (entrega == null) {
               emit(DeliveryDetailsNotFound());
             } else {
-              emit(DeliveryDetailsLoaded(entrega));
+              emit(_carregado(entrega));
             }
           },
           onError: (Object error) {
@@ -38,6 +44,29 @@ class DeliveryDetailsCubit extends Cubit<DeliveryDetailsState> {
           },
         );
   }
+
+  Future<void> carregarComprovante(String idEntrega) async {
+    try {
+      _comprovante = await _deliveryRepository.buscarComprovante(idEntrega);
+      _comprovanteErro = _comprovante == null
+          ? 'Comprovante não encontrado.'
+          : null;
+    } on Failure catch (e) {
+      _comprovanteErro = e.message;
+    } catch (_) {
+      _comprovanteErro = 'Não foi possível carregar o comprovante.';
+    }
+    final atual = state;
+    if (!isClosed && atual is DeliveryDetailsLoaded) {
+      emit(_carregado(atual.entrega));
+    }
+  }
+
+  DeliveryDetailsLoaded _carregado(Entrega entrega) => DeliveryDetailsLoaded(
+    entrega,
+    comprovanteBytes: _comprovante,
+    comprovanteErro: _comprovanteErro,
+  );
 
   @override
   Future<void> close() async {

@@ -42,8 +42,9 @@ class EntregaPage extends StatelessWidget {
             ),
             body: SafeArea(
               child: switch (state) {
-                DeliveryDetailsLoaded(:final entrega) => _buildEntregaContent(
-                  entrega,
+                DeliveryDetailsLoaded loaded => _buildEntregaContent(
+                  loaded.entrega,
+                  loaded,
                 ),
                 DeliveryDetailsNotFound() => const Center(
                   child: Text('Entrega não encontrada'),
@@ -75,7 +76,7 @@ class EntregaPage extends StatelessWidget {
     );
   }
 
-  Widget _buildEntregaContent(Entrega entrega) {
+  Widget _buildEntregaContent(Entrega entrega, DeliveryDetailsLoaded estado) {
     final corPagamento = entrega.pago ? Colors.green[700] : Colors.red[700];
 
     return SingleChildScrollView(
@@ -169,6 +170,30 @@ class EntregaPage extends StatelessWidget {
             entrega.entregue ? 'Entregue' : 'Não entregue',
             style: const TextStyle(fontSize: 16),
           ),
+          if (entrega.temComprovante) ...[
+            const Divider(),
+            const SizedBox(height: 12),
+            const _Label(text: 'Comprovante'),
+            if (estado.comprovanteBytes != null)
+              ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.memory(
+                  estado.comprovanteBytes!,
+                  fit: BoxFit.contain,
+                ),
+              )
+            else if (estado.comprovanteErro != null)
+              Text(
+                estado.comprovanteErro!,
+                style: const TextStyle(color: Colors.red),
+              )
+            else
+              const Text(
+                'Carregando comprovante...',
+                style: TextStyle(color: Colors.grey),
+              ),
+            const SizedBox(height: 20),
+          ],
           if (entrega.observacao.trim().isNotEmpty) ...[
             const Divider(),
             const SizedBox(height: 12),

@@ -14,6 +14,7 @@ class Entrega {
   final bool pago;
   final bool entregue;
   final String observacao;
+  final bool temComprovante;
 
   double get valorTotal => quantidadeSacos * precoUnitario;
 
@@ -33,6 +34,7 @@ class Entrega {
     required this.pago,
     required this.entregue,
     required this.observacao,
+    this.temComprovante = false,
   });
 
   factory Entrega.fromMap(Map<String, dynamic> data, String id) {
@@ -57,6 +59,7 @@ class Entrega {
       pago: status['pago'] ?? false,
       entregue: status['entregue'] ?? true,
       observacao: data['observacao'] ?? '',
+      temComprovante: data['temComprovante'] ?? false,
     );
   }
 }
