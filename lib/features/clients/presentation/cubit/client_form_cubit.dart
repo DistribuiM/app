@@ -17,6 +17,7 @@ class ClientFormCubit extends Cubit<ClientFormState> {
     required String telefone,
     required String idMotoristaResp,
     required String nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     emit(ClientFormSubmitting());
 
@@ -29,6 +30,7 @@ class ClientFormCubit extends Cubit<ClientFormState> {
         telefone: telefone,
         idMotoristaResp: idMotoristaResp,
         nomeMotoristaResp: nomeMotoristaResp,
+        permiteVendasAPrazo: permiteVendasAPrazo,
       );
       emit(ClientFormSuccess());
     } catch (e) {
@@ -49,6 +51,7 @@ class ClientFormCubit extends Cubit<ClientFormState> {
     required String telefone,
     String? idMotoristaResp,
     String? nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     emit(ClientFormSubmitting());
 
@@ -62,6 +65,7 @@ class ClientFormCubit extends Cubit<ClientFormState> {
         telefone: telefone,
         idMotoristaResp: idMotoristaResp,
         nomeMotoristaResp: nomeMotoristaResp,
+        permiteVendasAPrazo: permiteVendasAPrazo,
       );
       emit(ClientFormSuccess());
     } catch (e) {

@@ -15,13 +15,14 @@ class ClientRemoteDataSource {
     required String telefone,
     required String idMotoristaResp,
     required String nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     // Telefone é único, se já ta registrado, não cria outro
     final query = await _db
-      .collection('clientes')
-      .where('telefone', isEqualTo: telefone)
-      .limit(1)
-      .get();
+        .collection('clientes')
+        .where('telefone', isEqualTo: telefone)
+        .limit(1)
+        .get();
 
     if (query.docs.isNotEmpty) {
       throw ValidationFailure(
@@ -35,22 +36,19 @@ class ClientRemoteDataSource {
     await docRef.set({
       "id": docRef.id,
       "nome": nome,
-      "endereco": {
-        "rua": rua,
-        "complemento": complemento,
-        "cidade": cidade,
-      },
+      "endereco": {"rua": rua, "complemento": complemento, "cidade": cidade},
       "telefone": telefone,
       "motoristaResponsavel": {
         "id": idMotoristaResp,
         "nome": nomeMotoristaResp,
       },
+      "permiteVendasAPrazo": permiteVendasAPrazo,
       "financeiro": {
         "saldoPendente": 0.0,
         "totalComprado": 0.0,
         "ultimaEntrega": "", // Fica vazio até a primeira compra
       },
-      "ultimasEntregas": [] // Array de histórico
+      "ultimasEntregas": [], // Array de histórico
     });
 
     debugPrint("SUCESSO: Cliente $nome salvo no banco de dados!");
@@ -65,6 +63,7 @@ class ClientRemoteDataSource {
     required String telefone,
     String? idMotoristaResp,
     String? nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     final query = await _db
         .collection('clientes')
@@ -84,6 +83,7 @@ class ClientRemoteDataSource {
       'endereco.rua': rua,
       'endereco.complemento': complemento,
       'endereco.cidade': cidade,
+      'permiteVendasAPrazo': permiteVendasAPrazo,
     };
     if (idMotoristaResp != null && nomeMotoristaResp != null) {
       dados['motoristaResponsavel.id'] = idMotoristaResp;
@@ -99,8 +99,8 @@ class ClientRemoteDataSource {
     final querySnapshot = idMotorista == null
         ? await clientes.get()
         : await clientes
-            .where('motoristaResponsavel.id', isEqualTo: idMotorista)
-            .get();
+              .where('motoristaResponsavel.id', isEqualTo: idMotorista)
+              .get();
 
     return querySnapshot.docs.map((doc) {
       return Cliente.fromMap(doc.data(), doc.id);
@@ -119,25 +119,33 @@ class ClientRemoteDataSource {
     });
   }
 
+  Future<Cliente?> buscarCliente(String id) async {
+    final doc = await _db.collection('clientes').doc(id).get();
+    if (!doc.exists) return null;
+
+    return Cliente.fromMap(doc.data()!, doc.id);
+  }
+
   // Procura por id
   Future<Map<String, dynamic>?> buscarClientePorId(String id) async {
     try {
       final doc = await _db.collection('clientes').doc(id).get();
-      
+
       if (doc.exists) {
-          final dados = doc.data()!;
-          dados['id'] = doc.id;
-          return dados;
+        final dados = doc.data()!;
+        dados['id'] = doc.id;
+        return dados;
       }
-      return null; 
+      return null;
     } catch (erro) {
       debugPrint("Erro ao buscar cliente específico: $erro");
       return null;
     }
   }
 
-  Future<Map<String, dynamic>?> buscarClientePorTelefone(String telefone) 
-  async {
+  Future<Map<String, dynamic>?> buscarClientePorTelefone(
+    String telefone,
+  ) async {
     final query = await _db
         .collection('clientes')
         .where('telefone', isEqualTo: telefone)
@@ -150,5 +158,4 @@ class ClientRemoteDataSource {
 
     return null;
   }
-
 }

@@ -39,6 +39,45 @@ void main() {
     repository = ClientRepositoryImpl(dataSource);
   });
 
+  group('buscarCliente', () {
+    test('devolve o cliente encontrado pelo data source', () async {
+      when(
+        () => dataSource.buscarCliente(id),
+      ).thenAnswer((_) async => clientes.first);
+
+      expect(await repository.buscarCliente(id), same(clientes.first));
+      verify(() => dataSource.buscarCliente(id)).called(1);
+    });
+
+    test('devolve null quando o cliente não existe', () async {
+      when(() => dataSource.buscarCliente(id)).thenAnswer((_) async => null);
+
+      expect(await repository.buscarCliente(id), isNull);
+    });
+
+    test('relança a mesma Failure lançada pelo data source', () async {
+      const failure = ValidationFailure('msg');
+      when(() => dataSource.buscarCliente(id)).thenThrow(failure);
+
+      await expectLater(repository.buscarCliente(id), throwsA(same(failure)));
+    });
+
+    test('converte Exception em ServerFailure com mensagem genérica', () async {
+      when(() => dataSource.buscarCliente(id)).thenThrow(Exception('falha'));
+
+      await expectLater(
+        repository.buscarCliente(id),
+        throwsA(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível carregar o cliente. Tente novamente.',
+          ),
+        ),
+      );
+    });
+  });
+
   group('registrarCliente', () {
     test('relança a mesma Failure lançada pelo data source', () async {
       const failure = ValidationFailure('msg');
@@ -111,6 +150,7 @@ void main() {
           telefone: telefone,
           idMotoristaResp: idMotoristaResp,
           nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
         ),
       ).thenAnswer((_) async {});
 
@@ -123,9 +163,22 @@ void main() {
           telefone: telefone,
           idMotoristaResp: idMotoristaResp,
           nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
         ),
         completes,
       );
+      verify(
+        () => dataSource.registrarCliente(
+          nome: nome,
+          rua: rua,
+          complemento: complemento,
+          cidade: cidade,
+          telefone: telefone,
+          idMotoristaResp: idMotoristaResp,
+          nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
+        ),
+      ).called(1);
     });
   });
 
@@ -338,6 +391,7 @@ void main() {
           telefone: telefone,
           idMotoristaResp: idMotoristaResp,
           nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
         ),
       ).thenAnswer((_) async {});
 
@@ -351,6 +405,7 @@ void main() {
           telefone: telefone,
           idMotoristaResp: idMotoristaResp,
           nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
         ),
         completes,
       );
@@ -364,6 +419,7 @@ void main() {
           telefone: telefone,
           idMotoristaResp: idMotoristaResp,
           nomeMotoristaResp: nomeMotoristaResp,
+          permiteVendasAPrazo: false,
         ),
       ).called(1);
     });

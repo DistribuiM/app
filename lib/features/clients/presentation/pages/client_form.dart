@@ -44,6 +44,7 @@ class _ClientFormState extends State<ClientForm> {
   final _complementoController = TextEditingController();
   String? _cidadeSelecionada;
   Usuario? _responsavelSelecionado;
+  bool _permiteVendasAPrazo = true;
 
   @override
   void initState() {
@@ -54,6 +55,7 @@ class _ClientFormState extends State<ClientForm> {
       _enderecoController.text = cliente.endereco.rua;
       _telefoneController.text = cliente.telefone;
       _complementoController.text = cliente.endereco.complemento;
+      _permiteVendasAPrazo = cliente.permiteVendasAPrazo;
       if (_cities.contains(cliente.endereco.cidade)) {
         _cidadeSelecionada = cliente.endereco.cidade;
       }
@@ -151,6 +153,10 @@ class _ClientFormState extends State<ClientForm> {
                     const SizedBox(height: 20),
                     CheckBox(
                       label: "Permitir vendas a prazo para este cliente?",
+                      value: _permiteVendasAPrazo,
+                      onChanged: (value) {
+                        setState(() => _permiteVendasAPrazo = value);
+                      },
                     ),
                   ],
                 ),
@@ -229,6 +235,7 @@ class _ClientFormState extends State<ClientForm> {
                               telefone: telefone,
                               idMotoristaResp: responsavel.id,
                               nomeMotoristaResp: responsavel.nome,
+                              permiteVendasAPrazo: _permiteVendasAPrazo,
                             );
                           } else {
                             cubit.atualizarCliente(
@@ -244,6 +251,7 @@ class _ClientFormState extends State<ClientForm> {
                               nomeMotoristaResp: usuarioLogado.isAdmin
                                   ? _responsavelSelecionado!.nome
                                   : null,
+                              permiteVendasAPrazo: _permiteVendasAPrazo,
                             );
                           }
                         },

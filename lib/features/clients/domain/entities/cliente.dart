@@ -8,6 +8,7 @@ class Cliente {
   final double saldoPendente;
   final String idMotoristaResp;
   final String nomeMotoristaResp;
+  final bool permiteVendasAPrazo;
 
   Cliente({
     required this.id,
@@ -17,6 +18,7 @@ class Cliente {
     required this.saldoPendente,
     required this.idMotoristaResp,
     required this.nomeMotoristaResp,
+    this.permiteVendasAPrazo = true,
   });
 
   factory Cliente.fromMap(Map<String, dynamic> data, String id) {
@@ -32,6 +34,9 @@ class Cliente {
       saldoPendente: (fin['saldoPendente'] ?? 0.0).toDouble(),
       idMotoristaResp: mot['id'] ?? 'id_fixo_por_enquanto',
       nomeMotoristaResp: mot['nome'] ?? 'nome_fixo_por_enquanto',
+      permiteVendasAPrazo: data['permiteVendasAPrazo'] is bool
+          ? data['permiteVendasAPrazo'] as bool
+          : true,
     );
   }
 
@@ -47,6 +52,7 @@ class Cliente {
         'id': idMotoristaResp,
         'nome': nomeMotoristaResp,
       },
+      'permiteVendasAPrazo': permiteVendasAPrazo,
     };
   }
 }

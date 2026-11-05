@@ -1,6 +1,8 @@
 import '../entities/cliente.dart';
 
 abstract class ClientRepository {
+  Future<Cliente?> buscarCliente(String id);
+
   Future<List<Cliente>> buscarClientes({String? idMotorista});
 
   Stream<List<Cliente>> ouvirClientes({String? idMotorista});
@@ -13,6 +15,7 @@ abstract class ClientRepository {
     required String telefone,
     required String idMotoristaResp,
     required String nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   });
 
   Future<void> atualizarCliente({
@@ -24,5 +27,6 @@ abstract class ClientRepository {
     required String telefone,
     String? idMotoristaResp,
     String? nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   });
 }

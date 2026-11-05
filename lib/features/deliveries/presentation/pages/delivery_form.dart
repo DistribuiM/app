@@ -381,6 +381,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           if (widget.entrega case final entrega?) {
                             await cubit.atualizarEntrega(
                               id: entrega.id,
+                              idCliente: entrega.idCliente,
                               dataEntrega: _dataEntrega!,
                               idMotorista: motorista.id,
                               nomeMotorista: motorista.nome,

@@ -71,6 +71,7 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
     emit(DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes));
 
     try {
+      await _validarVendaAPrazo(idCliente, valorPendente);
       await _deliveryRepository.registrarEntrega(
         dataEntrega: dataEntrega,
         idMotorista: idMotorista,
@@ -100,6 +101,7 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
 
   Future<void> atualizarEntrega({
     required String id,
+    required String idCliente,
     required String dataEntrega,
     required String idMotorista,
     required String nomeMotorista,
@@ -119,6 +121,7 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
     emit(DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes));
 
     try {
+      await _validarVendaAPrazo(idCliente, valorPendente);
       await _deliveryRepository.atualizarEntrega(
         id: id,
         dataEntrega: dataEntrega,
@@ -140,6 +143,23 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
         emit(const DeliveryFormError('Erro inesperado. Tente novamente.'));
       }
       emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
+    }
+  }
+
+  Future<void> _validarVendaAPrazo(
+    String idCliente,
+    double valorPendente,
+  ) async {
+    final cliente = await _clientRepository.buscarCliente(idCliente);
+    if (cliente == null) {
+      throw const ValidationFailure(
+        'Não foi possível encontrar o cliente desta entrega.',
+      );
+    }
+    if (!cliente.permiteVendasAPrazo && valorPendente > 0) {
+      throw const ValidationFailure(
+        'Este cliente não permite vendas a prazo. Informe o pagamento integral.',
+      );
     }
   }
 }

@@ -11,6 +11,20 @@ class ClientRepositoryImpl implements ClientRepository {
   final ClientRemoteDataSource _clientRemoteDataSource;
 
   @override
+  Future<Cliente?> buscarCliente(String id) async {
+    try {
+      return await _clientRemoteDataSource.buscarCliente(id);
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao carregar cliente: $e');
+      throw ServerFailure(
+        'Não foi possível carregar o cliente. Tente novamente.',
+      );
+    }
+  }
+
+  @override
   Future<List<Cliente>> buscarClientes({String? idMotorista}) async {
     try {
       return await _clientRemoteDataSource.buscarClientes(
@@ -53,6 +67,7 @@ class ClientRepositoryImpl implements ClientRepository {
     required String telefone,
     required String idMotoristaResp,
     required String nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     try {
       await _clientRemoteDataSource.registrarCliente(
@@ -63,12 +78,15 @@ class ClientRepositoryImpl implements ClientRepository {
         telefone: telefone,
         idMotoristaResp: idMotoristaResp,
         nomeMotoristaResp: nomeMotoristaResp,
+        permiteVendasAPrazo: permiteVendasAPrazo,
       );
     } on Failure {
       rethrow;
     } catch (e) {
       debugPrint('Erro ao registrar cliente: $e');
-      throw ServerFailure('Não foi possível salvar o cliente. Tente novamente.');
+      throw ServerFailure(
+        'Não foi possível salvar o cliente. Tente novamente.',
+      );
     }
   }
 
@@ -82,6 +100,7 @@ class ClientRepositoryImpl implements ClientRepository {
     required String telefone,
     String? idMotoristaResp,
     String? nomeMotoristaResp,
+    bool permiteVendasAPrazo = true,
   }) async {
     try {
       await _clientRemoteDataSource.atualizarCliente(
@@ -93,6 +112,7 @@ class ClientRepositoryImpl implements ClientRepository {
         telefone: telefone,
         idMotoristaResp: idMotoristaResp,
         nomeMotoristaResp: nomeMotoristaResp,
+        permiteVendasAPrazo: permiteVendasAPrazo,
       );
     } on Failure {
       rethrow;

@@ -64,6 +64,15 @@ class _ClientePageState extends State<ClientePage> {
                   color: Colors.red,
                 ),
               ),
+              if (!cliente.permiteVendasAPrazo)
+                const Text(
+                  "Proibido vendas a prazo para esse cliente",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.red,
+                  ),
+                ),
               const SizedBox(height: 20),
 
               // Endereço

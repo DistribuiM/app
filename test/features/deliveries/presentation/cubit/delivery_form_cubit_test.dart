@@ -53,6 +53,16 @@ void main() {
       nomeMotoristaResp: 'Motorista',
     ),
   ];
+  final clienteSemPrazo = Cliente(
+    id: 'cliente-1',
+    nome: 'Cliente',
+    telefone: '11999999999',
+    endereco: Endereco(rua: 'Rua A', complemento: '', cidade: 'Cidade'),
+    saldoPendente: 0,
+    idMotoristaResp: 'motorista-1',
+    nomeMotoristaResp: 'Motorista',
+    permiteVendasAPrazo: false,
+  );
 
   setUp(() {
     deliveryRepository = MockDeliveryRepository();
@@ -255,8 +265,194 @@ void main() {
   );
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'registra entrega para cliente que permite vendas a prazo',
+    build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clientes.first);
+      when(
+        () => deliveryRepository.registrarEntrega(
+          dataEntrega: '2026-10-11',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          quantidadeSacos: 1,
+          precoUnitario: 80,
+          valorPago: 0,
+          valorPendente: 80,
+          formaPagamento: 'Dinheiro',
+          pago: false,
+          entregue: true,
+          observacao: '',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: (cubit) => cubit.registrarEntrega(
+      dataEntrega: '2026-10-11',
+      idMotorista: 'motorista-1',
+      nomeMotorista: 'Motorista',
+      idCliente: 'cliente-1',
+      nomeCliente: 'Cliente',
+      cidadeCliente: 'Cidade',
+      quantidadeSacos: 1,
+      precoUnitario: 80,
+      valorPago: 0,
+      valorPendente: 80,
+      formaPagamento: 'Dinheiro',
+      pago: false,
+      entregue: true,
+      observacao: '',
+    ),
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+    verify: (_) {
+      verify(() => clientRepository.buscarCliente('cliente-1')).called(1);
+      verify(
+        () => deliveryRepository.registrarEntrega(
+          dataEntrega: '2026-10-11',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          quantidadeSacos: 1,
+          precoUnitario: 80,
+          valorPago: 0,
+          valorPendente: 80,
+          formaPagamento: 'Dinheiro',
+          pago: false,
+          entregue: true,
+          observacao: '',
+        ),
+      ).called(1);
+    },
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'bloqueia registro com saldo pendente quando cliente proíbe vendas a prazo',
+    build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clienteSemPrazo);
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: (cubit) => cubit.registrarEntrega(
+      dataEntrega: '2026-10-11',
+      idMotorista: 'motorista-1',
+      nomeMotorista: 'Motorista',
+      idCliente: 'cliente-1',
+      nomeCliente: 'Cliente',
+      cidadeCliente: 'Cidade',
+      quantidadeSacos: 1,
+      precoUnitario: 80,
+      valorPago: 0,
+      valorPendente: 80,
+      formaPagamento: 'Dinheiro',
+      pago: false,
+      entregue: true,
+      observacao: '',
+    ),
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError(
+        'Este cliente não permite vendas a prazo. Informe o pagamento integral.',
+      ),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+    verify: (_) => verifyNever(
+      () => deliveryRepository.registrarEntrega(
+        dataEntrega: '2026-10-11',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        idCliente: 'cliente-1',
+        nomeCliente: 'Cliente',
+        cidadeCliente: 'Cidade',
+        quantidadeSacos: 1,
+        precoUnitario: 80,
+        valorPago: 0,
+        valorPendente: 80,
+        formaPagamento: 'Dinheiro',
+        pago: false,
+        entregue: true,
+        observacao: '',
+      ),
+    ),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'permite registro totalmente pago para cliente que proíbe vendas a prazo',
+    build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clienteSemPrazo);
+      when(
+        () => deliveryRepository.registrarEntrega(
+          dataEntrega: '2026-10-11',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          idCliente: 'cliente-1',
+          nomeCliente: 'Cliente',
+          cidadeCliente: 'Cidade',
+          quantidadeSacos: 1,
+          precoUnitario: 80,
+          valorPago: 80,
+          valorPendente: 0,
+          formaPagamento: 'Dinheiro',
+          pago: true,
+          entregue: true,
+          observacao: '',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: (cubit) => cubit.registrarEntrega(
+      dataEntrega: '2026-10-11',
+      idMotorista: 'motorista-1',
+      nomeMotorista: 'Motorista',
+      idCliente: 'cliente-1',
+      nomeCliente: 'Cliente',
+      cidadeCliente: 'Cidade',
+      quantidadeSacos: 1,
+      precoUnitario: 80,
+      valorPago: 80,
+      valorPendente: 0,
+      formaPagamento: 'Dinheiro',
+      pago: true,
+      entregue: true,
+      observacao: '',
+    ),
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
     'emite Error com a mensagem e volta a Loaded após falha ao registrar entrega',
     build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clientes.first);
       when(
         () => deliveryRepository.registrarEntrega(
           dataEntrega: '2026-10-11',
@@ -327,6 +523,9 @@ void main() {
     'atualizarEntrega emite Submitting e Success',
     build: () {
       when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clientes.first);
+      when(
         () => deliveryRepository.atualizarEntrega(
           id: 'entrega-1',
           dataEntrega: '2026-10-15',
@@ -371,8 +570,97 @@ void main() {
   );
 
   blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'bloqueia edição com saldo pendente quando cliente proíbe vendas a prazo',
+    build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clienteSemPrazo);
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarEntrega,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError(
+        'Este cliente não permite vendas a prazo. Informe o pagamento integral.',
+      ),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+    verify: (_) => verifyNever(
+      () => deliveryRepository.atualizarEntrega(
+        id: 'entrega-1',
+        dataEntrega: '2026-10-15',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        quantidadeSacos: 2,
+        precoUnitario: 90,
+        valorPago: 50,
+        valorPendente: 130,
+        formaPagamento: 'Pix',
+        pago: false,
+        observacao: 'Revisada',
+      ),
+    ),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'permite edição quitada para cliente que proíbe vendas a prazo',
+    build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clienteSemPrazo);
+      when(
+        () => deliveryRepository.atualizarEntrega(
+          id: 'entrega-1',
+          dataEntrega: '2026-10-15',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          quantidadeSacos: 2,
+          precoUnitario: 90,
+          valorPago: 180,
+          valorPendente: 0,
+          formaPagamento: 'Pix',
+          pago: true,
+          observacao: 'Revisada',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: (cubit) => cubit.atualizarEntrega(
+      id: 'entrega-1',
+      idCliente: 'cliente-1',
+      dataEntrega: '2026-10-15',
+      idMotorista: 'motorista-1',
+      nomeMotorista: 'Motorista',
+      quantidadeSacos: 2,
+      precoUnitario: 90,
+      valorPago: 180,
+      valorPendente: 0,
+      formaPagamento: 'Pix',
+      pago: true,
+      observacao: 'Revisada',
+    ),
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
     'atualizarEntrega preserva Failure e retorna a Loaded',
     build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clientes.first);
       when(
         () => deliveryRepository.atualizarEntrega(
           id: 'entrega-1',
@@ -406,6 +694,9 @@ void main() {
   blocTest<DeliveryFormCubit, DeliveryFormState>(
     'atualizarEntrega usa mensagem genérica para Exception',
     build: () {
+      when(
+        () => clientRepository.buscarCliente('cliente-1'),
+      ).thenAnswer((_) async => clientes.first);
       when(
         () => deliveryRepository.atualizarEntrega(
           id: 'entrega-1',
@@ -466,6 +757,7 @@ void main() {
 Future<void> _atualizarEntrega(DeliveryFormCubit cubit) {
   return cubit.atualizarEntrega(
     id: 'entrega-1',
+    idCliente: 'cliente-1',
     dataEntrega: '2026-10-15',
     idMotorista: 'motorista-1',
     nomeMotorista: 'Motorista',

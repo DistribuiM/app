@@ -27,6 +27,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: 'motorista-1',
           nomeMotoristaResp: 'Motorista',
+          permiteVendasAPrazo: false,
         ),
       ).thenAnswer((_) async {});
       return ClientFormCubit(clientRepository);
@@ -39,6 +40,7 @@ void main() {
       telefone: '11999999999',
       idMotoristaResp: 'motorista-1',
       nomeMotoristaResp: 'Motorista',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [ClientFormSubmitting(), ClientFormSuccess()],
   );
@@ -55,6 +57,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: 'motorista-1',
           nomeMotoristaResp: 'Motorista',
+          permiteVendasAPrazo: false,
         ),
       ).thenThrow(const ValidationFailure('msg'));
       return ClientFormCubit(clientRepository);
@@ -67,6 +70,7 @@ void main() {
       telefone: '11999999999',
       idMotoristaResp: 'motorista-1',
       nomeMotoristaResp: 'Motorista',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [
       ClientFormSubmitting(),
@@ -86,6 +90,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: 'motorista-1',
           nomeMotoristaResp: 'Motorista',
+          permiteVendasAPrazo: false,
         ),
       ).thenThrow(Exception('falha'));
       return ClientFormCubit(clientRepository);
@@ -98,6 +103,7 @@ void main() {
       telefone: '11999999999',
       idMotoristaResp: 'motorista-1',
       nomeMotoristaResp: 'Motorista',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [
       ClientFormSubmitting(),
@@ -118,6 +124,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: 'motorista-1',
           nomeMotoristaResp: 'Motorista',
+          permiteVendasAPrazo: false,
         ),
       ).thenAnswer((_) async {});
       return ClientFormCubit(clientRepository);
@@ -131,6 +138,7 @@ void main() {
       telefone: '11999999999',
       idMotoristaResp: 'motorista-1',
       nomeMotoristaResp: 'Motorista',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [ClientFormSubmitting(), ClientFormSuccess()],
   );
@@ -148,6 +156,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: null,
           nomeMotoristaResp: null,
+          permiteVendasAPrazo: false,
         ),
       ).thenThrow(const ValidationFailure('msg'));
       return ClientFormCubit(clientRepository);
@@ -159,6 +168,7 @@ void main() {
       complemento: '',
       cidade: 'Cidade',
       telefone: '11999999999',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [
       ClientFormSubmitting(),
@@ -179,6 +189,7 @@ void main() {
           telefone: '11999999999',
           idMotoristaResp: null,
           nomeMotoristaResp: null,
+          permiteVendasAPrazo: false,
         ),
       ).thenThrow(Exception('falha'));
       return ClientFormCubit(clientRepository);
@@ -190,6 +201,7 @@ void main() {
       complemento: '',
       cidade: 'Cidade',
       telefone: '11999999999',
+      permiteVendasAPrazo: false,
     ),
     expect: () => [
       ClientFormSubmitting(),
