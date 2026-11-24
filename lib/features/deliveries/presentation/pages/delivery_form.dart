@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/seletor_imagem.dart';
@@ -59,6 +60,9 @@ class _DeliveryFormState extends State<DeliveryForm> {
   void initState() {
     super.initState();
     final entrega = widget.entrega;
+    _dataEntrega = entrega == null || entrega.dataEntrega.isEmpty
+        ? DateFormat('dd/MM/yyyy').format(DateTime.now())
+        : entrega.dataEntrega;
     if (entrega != null) {
       _quantidadeController.text = entrega.quantidadeSacos.toString();
       _clientePagou = entrega.formaPagamento != 'Nenhum';
@@ -69,7 +73,6 @@ class _DeliveryFormState extends State<DeliveryForm> {
             : valorPago.toString();
       }
       _observacaoController.text = entrega.observacao;
-      _dataEntrega = entrega.dataEntrega.isEmpty ? null : entrega.dataEntrega;
       _precoUnitario = entrega.precoUnitario.toInt();
       const formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
       final indiceForma = formasPagamento.indexOf(entrega.formaPagamento);

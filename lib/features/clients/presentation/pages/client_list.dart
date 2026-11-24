@@ -9,19 +9,66 @@ import '../../domain/entities/cliente.dart';
 import '../cubit/client_list_cubit.dart';
 import '../cubit/client_list_state.dart';
 
-class ClientList extends StatelessWidget {
+class ClientList extends StatefulWidget {
   const ClientList({super.key});
 
-  // Agrupa a lista plana de clientes por cidade
-  Map<String, List<Cliente>> _agruparPorCidade(List<Cliente> clientes) {
-    final Map<String, List<Cliente>> agrupado = {};
+  @override
+  State<ClientList> createState() => _ClientListState();
+}
+
+class _ClientListState extends State<ClientList> {
+  final Set<String> _motoristasExpandidos = {};
+
+  List<_GrupoMotorista> _agruparPorMotorista(List<Cliente> clientes) {
+    final agrupado = <String, _GrupoMotorista>{};
     for (final cliente in clientes) {
-      final cidade = cliente.endereco.cidade;
-      agrupado.putIfAbsent(cidade, () => []).add(cliente);
+      final motorista = agrupado.putIfAbsent(
+        cliente.idMotoristaResp,
+        () => _GrupoMotorista(
+          id: cliente.idMotoristaResp,
+          nome: cliente.nomeMotoristaResp,
+        ),
+      );
+      motorista.clientes.add(cliente);
+    }
+
+    final motoristas = agrupado.values.toList()
+      ..sort((a, b) {
+        final comparacao = a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
+        return comparacao != 0 ? comparacao : a.id.compareTo(b.id);
+      });
+
+    final contagensPorNome = <String, int>{};
+    for (final motorista in motoristas) {
+      final chaveNome = motorista.nome.toLowerCase();
+      contagensPorNome.update(
+        chaveNome,
+        (contagem) => contagem + 1,
+        ifAbsent: () => 1,
+      );
+    }
+
+    return motoristas.map((motorista) {
+      final nomeRepetido = contagensPorNome[motorista.nome.toLowerCase()]! > 1;
+      return _GrupoMotorista(
+        id: motorista.id,
+        nome: motorista.nome,
+        rotulo: nomeRepetido
+            ? '${motorista.nome} (${motorista.id})'
+            : motorista.nome,
+        clientes: motorista.clientes,
+      );
+    }).toList();
+  }
+
+  Map<String, List<Cliente>> _agruparPorCidade(List<Cliente> clientes) {
+    final agrupado = <String, List<Cliente>>{};
+    for (final cliente in clientes) {
+      agrupado.putIfAbsent(cliente.endereco.cidade, () => []).add(cliente);
     }
     return agrupado;
   }
-  
+
   @override
   Widget build(BuildContext context) {
     final sessionState = context.watch<SessionCubit>().state;
@@ -60,142 +107,100 @@ class ClientList extends StatelessWidget {
             return const SizedBox.shrink();
           }
 
-          final agrupado = _agruparPorCidade(state.clientes);
-
           if (state.clientes.isEmpty) {
             return const Center(child: Text('Nenhum cliente cadastrado'));
           }
 
+          final motoristas = _agruparPorMotorista(state.clientes);
+
           return ListView(
-            children: agrupado.entries.map((entry) {
-              final cidade = entry.key;
-              final clientes = entry.value;
-              return Column(
-                children: [
-                  // Cabecalho da cidade
-                  Container(
-                    width: double.infinity,
-                    color: Colors.grey[200],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Text(
-                      cidade,
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                  ),
-                  // Clientes da cidade
-                  ...clientes.map(
-                    (cliente) => Column(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            context.push(
-                              '/clients/${cliente.id}',
-                              extra: cliente,
-                            );
-                          },
-                          child: Container(
-                            width: double.infinity,
-                            color: Colors.white,
-                            padding: const EdgeInsets.all(16),
-                            child: Column(
-                              children: [
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment:
-                                            CrossAxisAlignment.start,
-                                        children: [
-                                          Row(
-                                            children: [
-                                              Icon(
-                                                Icons.group,
-                                                color: Colors.green[700],
-                                              ),
-                                              const SizedBox(width: 8),
-                                              Expanded(
-                                                  child: Text(
-                                                    cliente.nome,
-                                                    maxLines: 2,
-                                                    overflow: TextOverflow.ellipsis,
-                                                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                                  ),
-                                                ),
-                                            ],
-                                          ),
-                                          const SizedBox(height: 8),
-                                          Text(
-                                            cliente.endereco.rua,
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              color: Colors.grey[700],
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                    Text(
-                                      "R\$${cliente.saldoPendente.toStringAsFixed(2)}",
-                                      style: const TextStyle(
-                                        color: Color.fromARGB(255, 212, 30, 17),
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 18,
-                                      ),
-                                    ),
-                                  ],
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            children: motoristas.map((motorista) {
+              final expandido = _motoristasExpandidos.contains(motorista.id);
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          setState(() {
+                            if (expandido) {
+                              _motoristasExpandidos.remove(motorista.id);
+                            } else {
+                              _motoristasExpandidos.add(motorista.id);
+                            }
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.local_shipping,
+                                size: 19,
+                                color: Colors.green[700],
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  motorista.rotulo,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                                 ),
-                                const SizedBox(height: 20),
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    IconButton(
-                                      onPressed: () {
-                                        context.push(
-                                          '/deliveries/new',
-                                          extra: cliente,
-                                        );
-                                      },
-                                      icon: const Icon(Icons.add),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        context.push(
-                                          '/clients/${cliente.id}/edit',
-                                          extra: cliente,
-                                        );
-                                      },
-                                      icon: const Icon(Icons.edit),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {
-                                        // final telefone = cliente['telefone'];
-                                        // abrir discador
-                                      },
-                                      icon: const Icon(Icons.phone),
-                                    ),
-                                    IconButton(
-                                      onPressed: () {},
-                                      icon: const Icon(Icons.chat_bubble),
-                                    ),
-                                  ],
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
                                 ),
-                              ],
-                            ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${motorista.clientes.length}',
+                                  style: TextStyle(
+                                    color: Colors.green[800],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              AnimatedRotation(
+                                turns: expandido ? 0.25 : 0,
+                                duration: const Duration(milliseconds: 180),
+                                child: Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const Divider(
-                          height: 1,
-                          thickness: 1,
-                          color: Color.fromARGB(120, 158, 158, 158),
-                        ),
-                      ],
+                      ),
                     ),
-                  ),
-                ],
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 180),
+                      alignment: Alignment.topCenter,
+                      child: expandido
+                          ? _buildClientesPorCidade(motorista.clientes)
+                          : const SizedBox(width: double.infinity),
+                    ),
+                  ],
+                ),
               );
             }).toList(),
           );
@@ -203,4 +208,139 @@ class ClientList extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildClientesPorCidade(List<Cliente> clientes) {
+    final cidades = _agruparPorCidade(clientes);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: cidades.entries.expand((entry) {
+        return [
+          Container(
+            color: Colors.grey[200],
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            child: Text(entry.key, style: const TextStyle(fontSize: 20)),
+          ),
+          ...entry.value.map(_buildCardCliente),
+        ];
+      }).toList(),
+    );
+  }
+
+  Widget _buildCardCliente(Cliente cliente) {
+    return Column(
+      children: [
+        GestureDetector(
+          onTap: () {
+            context.push('/clients/${cliente.id}', extra: cliente);
+          },
+          child: Container(
+            width: double.infinity,
+            color: Colors.white,
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Icon(Icons.group, color: Colors.green[700]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  cliente.nome,
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            cliente.endereco.rua,
+                            style: TextStyle(
+                              fontSize: 16,
+                              color: Colors.grey[700],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Text(
+                      "R\$${cliente.saldoPendente.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                        color: Color.fromARGB(255, 212, 30, 17),
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      onPressed: () {
+                        context.push('/deliveries/new', extra: cliente);
+                      },
+                      icon: const Icon(Icons.add),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        context.push(
+                          '/clients/${cliente.id}/edit',
+                          extra: cliente,
+                        );
+                      },
+                      icon: const Icon(Icons.edit),
+                    ),
+                    IconButton(
+                      onPressed: () {
+                        // final telefone = cliente['telefone'];
+                        // abrir discador
+                      },
+                      icon: const Icon(Icons.phone),
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: const Icon(Icons.chat_bubble),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+        const Divider(
+          height: 1,
+          thickness: 1,
+          color: Color.fromARGB(120, 158, 158, 158),
+        ),
+      ],
+    );
+  }
+}
+
+class _GrupoMotorista {
+  _GrupoMotorista({
+    required this.id,
+    required this.nome,
+    String? rotulo,
+    List<Cliente>? clientes,
+  }) : rotulo = rotulo ?? nome,
+       clientes = clientes ?? [];
+
+  final String id;
+  final String nome;
+  final String rotulo;
+  final List<Cliente> clientes;
 }
