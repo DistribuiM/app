@@ -107,26 +107,22 @@ class _HomePageState extends State<HomePage> {
           body: currentTab.body,
           floatingActionButton: FloatingActionButton(
             onPressed: () {
-              if (_selectedIndex.value == 0) {
-                // Ta na aba de clientes
-                // _clientKey.currentState?.adicionarCliente();
+              if (index == 0) {
                 context.push('/clients/new');
-              } else if (_selectedIndex.value == 1) {
-                // Aba de entregas
-                // _deliveryKey.currentState?.adicionarEntrega();
+              } else {
                 context.push('/deliveries/new');
               }
             },
-            tooltip: 'Formulário',
-            shape: const CircleBorder(),
-            child: const Icon(Icons.add),
+            tooltip: index == 0 ? 'Novo cliente' : 'Nova entrega ou pagamento',
+            child: Icon(
+              index == 0 ? Icons.person_add_alt_1 : Icons.add_shopping_cart,
+            ),
           ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
+          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           bottomNavigationBar: CustomBottomAppBar(
             selectedIndex: _selectedIndex,
-            fabLocation: FloatingActionButtonLocation.centerDocked,
-            shape: const CircularNotchedRectangle(),
+            fabLocation: FloatingActionButtonLocation.endFloat,
+            shape: null,
           ),
         );
       },
