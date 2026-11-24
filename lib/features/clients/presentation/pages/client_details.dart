@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../domain/entities/cliente.dart';
 import '../../../deliveries/presentation/widgets/client_deliveries_section.dart';
@@ -30,7 +32,6 @@ class _ClientePageState extends State<ClientePage> {
               // Nome do cliente
               const _Label(text: "Cliente"),
               Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Expanded(
                     child: Row(
@@ -50,10 +51,6 @@ class _ClientePageState extends State<ClientePage> {
                         ),
                       ],
                     ),
-                  ),
-                  IconButton(
-                    onPressed: () {}, // abrir formulário de entrega
-                    icon: Icon(Icons.add, color: Colors.green[700], size: 28),
                   ),
                 ],
               ),
@@ -147,7 +144,14 @@ class _ClientePageState extends State<ClientePage> {
               const SizedBox(height: 24),
               const Divider(),
 
-              ClientDeliveriesSection(idCliente: cliente.id),
+              ClientDeliveriesSection(
+                idCliente: cliente.id,
+                leadingAction: IconButton(
+                  onPressed: () =>
+                      context.push('/deliveries/new', extra: cliente),
+                  icon: Icon(Icons.add, color: Colors.green[700], size: 28),
+                ),
+              ),
             ],
           ),
         ),

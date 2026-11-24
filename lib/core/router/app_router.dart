@@ -44,10 +44,7 @@ GoRouter createAppRouter(SessionCubit session) {
       return null;
     },
     routes: [
-      GoRoute(
-        path: '/login',
-        builder: (context, state) => const LoginPage(),
-      ),
+      GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
       GoRoute(
         path: '/',
         builder: (context, state) {
@@ -64,33 +61,31 @@ GoRouter createAppRouter(SessionCubit session) {
       ),
       GoRoute(
         path: '/clients/:id/edit',
-        redirect: (context, state) =>
-            state.extra is Cliente ? null : '/',
+        redirect: (context, state) => state.extra is Cliente ? null : '/',
         builder: (context, state) =>
             ClientForm(cliente: state.extra as Cliente),
       ),
       GoRoute(
         path: '/clients/:id',
-        redirect: (context, state) =>
-            state.extra is Cliente ? null : '/',
+        redirect: (context, state) => state.extra is Cliente ? null : '/',
         builder: (context, state) =>
             ClientePage(cliente: state.extra as Cliente),
       ),
       GoRoute(
         path: '/deliveries/new',
-        builder: (context, state) => const DeliveryForm(),
+        builder: (context, state) => DeliveryForm(
+          cliente: state.extra is Cliente ? state.extra as Cliente : null,
+        ),
       ),
       GoRoute(
         path: '/deliveries/:id/edit',
-        redirect: (context, state) =>
-            state.extra is Entrega ? null : '/',
+        redirect: (context, state) => state.extra is Entrega ? null : '/',
         builder: (context, state) =>
             DeliveryForm(entrega: state.extra as Entrega),
       ),
       GoRoute(
         path: '/deliveries/:id',
-        redirect: (context, state) =>
-            state.extra is Entrega ? null : '/',
+        redirect: (context, state) => state.extra is Entrega ? null : '/',
         builder: (context, state) =>
             EntregaPage(entrega: state.extra as Entrega),
       ),

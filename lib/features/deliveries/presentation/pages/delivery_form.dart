@@ -20,9 +20,10 @@ import '../cubit/delivery_form_cubit.dart';
 import '../cubit/delivery_form_state.dart';
 
 class DeliveryForm extends StatefulWidget {
-  const DeliveryForm({super.key, this.entrega});
+  const DeliveryForm({super.key, this.entrega, this.cliente});
 
   final Entrega? entrega;
+  final Cliente? cliente;
 
   @override
   State<DeliveryForm> createState() => _DeliveryFormState();
@@ -105,6 +106,14 @@ class _DeliveryFormState extends State<DeliveryForm> {
           if (state is DeliveryFormLoaded) {
             _motoristasCarregados = state.motoristas;
             _clientesCarregados = state.clientes;
+            if (widget.cliente != null) {
+              for (final cliente in state.clientes) {
+                if (cliente.id == widget.cliente!.id) {
+                  _clienteSelecionado = cliente;
+                  break;
+                }
+              }
+            }
             if (!_motoristaInicializado) {
               Usuario? motoristaInicial;
               if (usuario.isAdmin) {
@@ -451,7 +460,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                                   ? formasPagamento[_formaPagamento]
                                   : 'Nenhum',
                               pago: valorPendente <= 0,
-                              observacao: _observacaoController.text, 
+                              observacao: _observacaoController.text,
                             );
                           } else {
                             final cliente = _clienteSelecionado!;
