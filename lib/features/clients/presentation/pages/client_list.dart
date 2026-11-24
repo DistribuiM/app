@@ -10,7 +10,9 @@ import '../cubit/client_list_cubit.dart';
 import '../cubit/client_list_state.dart';
 
 class ClientList extends StatefulWidget {
-  const ClientList({super.key});
+  const ClientList({super.key, this.searchQuery = ''});
+
+  final String searchQuery;
 
   @override
   State<ClientList> createState() => _ClientListState();
@@ -18,6 +20,20 @@ class ClientList extends StatefulWidget {
 
 class _ClientListState extends State<ClientList> {
   final Set<String> _motoristasExpandidos = {};
+
+  bool get _buscaAtiva =>
+      _normalizarTexto(widget.searchQuery.trim()).isNotEmpty;
+
+  @override
+  void didUpdateWidget(covariant ClientList oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    final buscaAnteriorAtiva = _normalizarTexto(
+      oldWidget.searchQuery.trim(),
+    ).isNotEmpty;
+    if (buscaAnteriorAtiva && !_buscaAtiva) {
+      _motoristasExpandidos.clear();
+    }
+  }
 
   List<_GrupoMotorista> _agruparPorMotorista(List<Cliente> clientes) {
     final agrupado = <String, _GrupoMotorista>{};
@@ -111,12 +127,27 @@ class _ClientListState extends State<ClientList> {
             return const Center(child: Text('Nenhum cliente cadastrado'));
           }
 
-          final motoristas = _agruparPorMotorista(state.clientes);
+          final consulta = _normalizarTexto(widget.searchQuery.trim());
+          final clientes = consulta.isEmpty
+              ? state.clientes
+              : state.clientes
+                    .where(
+                      (cliente) =>
+                          _normalizarTexto(cliente.nome).contains(consulta),
+                    )
+                    .toList();
+
+          if (clientes.isEmpty) {
+            return const Center(child: Text('Nenhum cliente encontrado'));
+          }
+
+          final motoristas = _agruparPorMotorista(clientes);
 
           return ListView(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             children: motoristas.map((motorista) {
-              final expandido = _motoristasExpandidos.contains(motorista.id);
+              final expandido =
+                  _buscaAtiva || _motoristasExpandidos.contains(motorista.id);
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 4),
                 decoration: BoxDecoration(
@@ -343,4 +374,32 @@ class _GrupoMotorista {
   final String nome;
   final String rotulo;
   final List<Cliente> clientes;
+}
+
+String _normalizarTexto(String texto) {
+  return texto
+      .toLowerCase()
+      .replaceAll(RegExp('[àáâãäåāăą]'), 'a')
+      .replaceAll(RegExp('[èéêëēĕėęě]'), 'e')
+      .replaceAll(RegExp('[ìíîïĩīĭįı]'), 'i')
+      .replaceAll(RegExp('[òóôõöøōŏő]'), 'o')
+      .replaceAll(RegExp('[ùúûüũūŭůűų]'), 'u')
+      .replaceAll(RegExp('[çćĉċč]'), 'c')
+      .replaceAll(RegExp('[ñńņň]'), 'n')
+      .replaceAll(RegExp('[ýÿŷ]'), 'y')
+      .replaceAll(RegExp('[śŝşš]'), 's')
+      .replaceAll(RegExp('[źżž]'), 'z')
+      .replaceAll(RegExp('[ŕŗř]'), 'r')
+      .replaceAll(RegExp('[ĺļľł]'), 'l')
+      .replaceAll(RegExp('[ďđ]'), 'd')
+      .replaceAll(RegExp('[ĝğġģ]'), 'g')
+      .replaceAll(RegExp('[ĥ]'), 'h')
+      .replaceAll(RegExp('[ĵ]'), 'j')
+      .replaceAll(RegExp('[ķ]'), 'k')
+      .replaceAll(RegExp('[ţť]'), 't')
+      .replaceAll(RegExp('[ŵ]'), 'w')
+      .replaceAll(RegExp('[æ]'), 'ae')
+      .replaceAll(RegExp('[œ]'), 'oe')
+      .replaceAll(RegExp('[ß]'), 'ss')
+      .replaceAll(RegExp(r'[\u0300-\u036f]'), '');
 }

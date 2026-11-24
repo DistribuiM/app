@@ -6,20 +6,33 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
   final bool leading;
-  const CustomAppBar({super.key, required this.title, this.leading = false});
+  final Widget? titleContent;
+  final List<Widget> actions;
+
+  const CustomAppBar({
+    super.key,
+    required this.title,
+    this.leading = false,
+    this.titleContent,
+    this.actions = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
     return AppBar(
-      title: Text(title, style: TextStyle(color: Colors.white)),
+      title:
+          titleContent ??
+          Text(title, style: const TextStyle(color: Colors.white)),
       backgroundColor: Theme.of(context).colorScheme.primary,
       centerTitle: true,
-      leading: leading ? 
-        Tooltip(
-          message: 'Voltar',
-          child: BackButton(color: Colors.white)
-        ) : null,
+      leading: leading
+          ? Tooltip(
+              message: 'Voltar',
+              child: BackButton(color: Colors.white),
+            )
+          : null,
       actions: [
+        ...actions,
         IconButton(
           icon: const Icon(Icons.logout, color: Colors.white),
           onPressed: () async {
