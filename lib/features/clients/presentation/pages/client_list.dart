@@ -154,7 +154,10 @@ class ClientList extends StatelessWidget {
                                   children: [
                                     IconButton(
                                       onPressed: () {
-                                        context.push('/deliveries/new');
+                                        context.push(
+                                          '/deliveries/new',
+                                          extra: cliente,
+                                        );
                                       },
                                       icon: const Icon(Icons.add),
                                     ),
