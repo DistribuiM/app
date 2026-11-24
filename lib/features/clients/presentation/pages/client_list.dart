@@ -150,6 +150,7 @@ class _ClientListState extends State<ClientList> {
                   _buscaAtiva || _motoristasExpandidos.contains(motorista.id);
               return Container(
                 margin: const EdgeInsets.symmetric(vertical: 4),
+                clipBehavior: Clip.antiAlias,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   border: Border.all(color: Colors.grey.shade300),
@@ -241,23 +242,40 @@ class _ClientListState extends State<ClientList> {
   }
 
   Widget _buildClientesPorCidade(List<Cliente> clientes) {
-    final cidades = _agruparPorCidade(clientes);
+    final cidades = _agruparPorCidade(clientes).entries.toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: cidades.entries.expand((entry) {
-        return [
+      children: [
+        for (
+          var indiceCidade = 0;
+          indiceCidade < cidades.length;
+          indiceCidade++
+        ) ...[
           Container(
             color: Colors.grey[200],
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-            child: Text(entry.key, style: const TextStyle(fontSize: 20)),
+            child: Text(
+              cidades[indiceCidade].key,
+              style: const TextStyle(fontSize: 20),
+            ),
           ),
-          ...entry.value.map(_buildCardCliente),
-        ];
-      }).toList(),
+          for (
+            var indiceCliente = 0;
+            indiceCliente < cidades[indiceCidade].value.length;
+            indiceCliente++
+          )
+            _buildCardCliente(
+              cidades[indiceCidade].value[indiceCliente],
+              mostrarDivisor:
+                  indiceCidade < cidades.length - 1 ||
+                  indiceCliente < cidades[indiceCidade].value.length - 1,
+            ),
+        ],
+      ],
     );
   }
 
-  Widget _buildCardCliente(Cliente cliente) {
+  Widget _buildCardCliente(Cliente cliente, {required bool mostrarDivisor}) {
     return Column(
       children: [
         GestureDetector(
@@ -351,11 +369,12 @@ class _ClientListState extends State<ClientList> {
             ),
           ),
         ),
-        const Divider(
-          height: 1,
-          thickness: 1,
-          color: Color.fromARGB(120, 158, 158, 158),
-        ),
+        if (mostrarDivisor)
+          const Divider(
+            height: 1,
+            thickness: 1,
+            color: Color.fromARGB(120, 158, 158, 158),
+          ),
       ],
     );
   }
