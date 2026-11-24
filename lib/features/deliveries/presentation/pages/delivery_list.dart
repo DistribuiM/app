@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/data_row_press_color.dart';
@@ -19,15 +20,50 @@ class DeliveryList extends StatefulWidget {
 
 class _DeliveryListState extends State<DeliveryList> {
   String? _selectedEntregaId;
+  final Set<String> _diasExpandidos = {};
 
-  // AGRUPA POR MOTORISTA
-  Map<String, List<Entrega>> _agruparPorMotorista(List<Entrega> entregas) {
-    final Map<String, List<Entrega>> agrupado = {};
+  List<_EntregaDia> _agruparPorDia(List<Entrega> entregas) {
+    final agrupado = <String, _EntregaDia>{};
     for (final entrega in entregas) {
-      final nomeMotorista = entrega.nomeMotorista;
-      agrupado.putIfAbsent(nomeMotorista, () => []).add(entrega);
+      final data = _parseData(entrega.dataEntrega);
+      final chave = data == null
+          ? 'invalida:${entrega.dataEntrega}'
+          : '${data.year}-${data.month}-${data.day}';
+      final grupo = agrupado.putIfAbsent(
+        chave,
+        () => _EntregaDia(
+          chave: chave,
+          data: data,
+          rotulo: data == null
+              ? (entrega.dataEntrega.isEmpty
+                    ? 'Data não informada'
+                    : entrega.dataEntrega)
+              : DateFormat('d/M/yyyy').format(data),
+        ),
+      );
+      grupo.entregas.add(entrega);
     }
-    return agrupado;
+
+    final dias = agrupado.values.toList()
+      ..sort((a, b) {
+        if (a.data == null)
+          return b.data == null ? a.rotulo.compareTo(b.rotulo) : 1;
+        if (b.data == null) return -1;
+        return b.data!.compareTo(a.data!);
+      });
+    return dias;
+  }
+
+  DateTime? _parseData(String valor) {
+    for (final formato in ['dd/MM/yyyy', 'd/M/yyyy']) {
+      try {
+        final data = DateFormat(formato).parseStrict(valor);
+        return DateTime(data.year, data.month, data.day);
+      } on FormatException {
+        continue;
+      }
+    }
+    return null;
   }
 
   Future<void> _abrirDetalhe(Entrega entrega) async {
@@ -36,10 +72,7 @@ class _DeliveryListState extends State<DeliveryList> {
     await Future<void>.delayed(const Duration(milliseconds: 200));
     if (!mounted) return;
 
-    await context.push(
-      '/deliveries/${entrega.id}',
-      extra: entrega,
-    );
+    await context.push('/deliveries/${entrega.id}', extra: entrega);
 
     if (mounted) {
       setState(() => _selectedEntregaId = null);
@@ -79,159 +112,96 @@ class _DeliveryListState extends State<DeliveryList> {
             return const Center(child: Text("Nenhuma entrega registrada"));
           }
 
-          final agrupado = _agruparPorMotorista(entregas);
+          final dias = _agruparPorDia(entregas);
 
           return ListView(
-            children: agrupado.entries.map((entry) {
-              final motorista = entry.key;
-              final entregasDoMotorista = entry.value;
-
-              return Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Cabecalho do motorista
-                  Container(
-                    width: double.infinity,
-                    color: Colors.grey[200],
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 10,
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(Icons.local_shipping, color: Colors.green[700]),
-                        const SizedBox(width: 8),
-                        Text(
-                          motorista,
-                          style: const TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          "${entregasDoMotorista.length} entrega(s)",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.grey[600],
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // Tabela de entregas
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: TweenAnimationBuilder<double>(
-                      tween: Tween<double>(
-                        begin: 0,
-                        end: _selectedEntregaId == null ? 0 : 1,
-                      ),
-                      duration: const Duration(milliseconds: 200),
-                      builder: (context, progress, child) {
-                        return DataTable(
-                      showCheckboxColumn: false,
-                      headingRowColor: const WidgetStatePropertyAll(
-                        Color(0xFFF5F5F5),
-                      ), // Substituindo Colors.grey[100]
-                      columns: const [
-                        DataColumn(
-                          label: Text(
-                            "Data",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Cliente",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Sacos",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Valor Pago",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Pagamento",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(
-                          label: Text(
-                            "Cidade",
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                        DataColumn(label: SizedBox.shrink()),
-                      ],
-                      rows: entregasDoMotorista.map((entrega) {
-                        return DataRow(
-                          selected: _selectedEntregaId == entrega.id,
-                          color: _selectedEntregaId == entrega.id
-                              ? dataRowSelectedColor
-                              : dataRowPressColor,
-                          onSelectChanged: (selected) {
-                            if (selected == true) {
-                              _abrirDetalhe(entrega);
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            children: dias.map((dia) {
+              final expandido = _diasExpandidos.contains(dia.chave);
+              return Container(
+                margin: const EdgeInsets.symmetric(vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade300),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  children: [
+                    Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(8),
+                        onTap: () {
+                          setState(() {
+                            if (expandido) {
+                              _diasExpandidos.remove(dia.chave);
+                            } else {
+                              _diasExpandidos.add(dia.chave);
                             }
-                          },
-                          cells: [
-                            DataCell(Text(entrega.dataEntrega)),
-                            DataCell(
-                              ConstrainedBox(
-                                constraints: const BoxConstraints(maxWidth: 180),
-                                child: Text(
-                                  entrega.nomeCliente,
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                            ),
-                            DataCell(Text("${entrega.quantidadeSacos}")),
-                            DataCell(
-                              Text(
-                                "R\$${entrega.valorPago.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: entrega.pago
-                                      ? Colors.green[700]
-                                      : Colors.red[700],
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ),
-                            DataCell(Text(entrega.formaPagamento)),
-                            DataCell(Text(entrega.cidadeCliente)),
-                            DataCell(
+                          });
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          child: Row(
+                            children: [
                               Icon(
-                                Icons.arrow_forward_ios,
-                                size: 16,
-                                color: Colors.grey[600],
+                                Icons.calendar_today,
+                                size: 19,
+                                color: Colors.green[700],
                               ),
-                            ),
-                          ],
-                        );
-                      }).toList(),
-                        );
-                      },
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Text(
+                                  dia.rotulo,
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 3,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.shade50,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '${dia.entregas.length}',
+                                  style: TextStyle(
+                                    color: Colors.green[800],
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              AnimatedRotation(
+                                turns: expandido ? 0.25 : 0,
+                                duration: const Duration(milliseconds: 180),
+                                child: Icon(
+                                  Icons.chevron_right,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
                     ),
-                  ),
-
-                  const Divider(
-                    height: 1,
-                    thickness: 1,
-                    color: Color.fromARGB(120, 158, 158, 158),
-                  ),
-                ],
+                    AnimatedSize(
+                      duration: const Duration(milliseconds: 180),
+                      alignment: Alignment.topCenter,
+                      child: expandido
+                          ? _buildEntregasPorMotorista(dia.entregas)
+                          : const SizedBox(width: double.infinity),
+                    ),
+                  ],
+                ),
               );
             }).toList(),
           );
@@ -239,4 +209,168 @@ class _DeliveryListState extends State<DeliveryList> {
       ),
     );
   }
+
+  Widget _buildEntregasPorMotorista(List<Entrega> entregas) {
+    final agrupado = <String, _EntregasMotorista>{};
+    for (final entrega in entregas) {
+      final motorista = agrupado.putIfAbsent(
+        entrega.idMotorista,
+        () => _EntregasMotorista(
+          id: entrega.idMotorista,
+          nome: entrega.nomeMotorista,
+        ),
+      );
+      motorista.entregas.add(entrega);
+    }
+
+    final motoristas = agrupado.values.toList()
+      ..sort((a, b) {
+        final comparacao = a.nome.toLowerCase().compareTo(b.nome.toLowerCase());
+        return comparacao != 0 ? comparacao : a.id.compareTo(b.id);
+      });
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: motoristas.map((motorista) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(
+              color: Colors.grey[200],
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  Icon(Icons.local_shipping, color: Colors.green[700]),
+                  const SizedBox(width: 8),
+                  Text(
+                    motorista.nome,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 8,
+                      vertical: 3,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.green.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      '${motorista.entregas.length}',
+                      style: TextStyle(
+                        color: Colors.green[800],
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: _buildTabelaEntregas(motorista.entregas),
+            ),
+            const Divider(height: 1),
+          ],
+        );
+      }).toList(),
+    );
+  }
+
+  DataTable _buildTabelaEntregas(List<Entrega> entregas) {
+    return DataTable(
+      showCheckboxColumn: false,
+      headingRowColor: const WidgetStatePropertyAll(Color(0xFFF5F5F5)),
+      columns: const [
+        DataColumn(
+          label: Text("Data", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text("Cliente", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text("Sacos", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(
+          label: Text(
+            "Valor Pago",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: Text(
+            "Pagamento",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+        ),
+        DataColumn(
+          label: Text("Cidade", style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+        DataColumn(label: SizedBox.shrink()),
+      ],
+      rows: entregas.map((entrega) {
+        return DataRow(
+          selected: _selectedEntregaId == entrega.id,
+          color: _selectedEntregaId == entrega.id
+              ? dataRowSelectedColor
+              : dataRowPressColor,
+          onSelectChanged: (selected) {
+            if (selected == true) {
+              _abrirDetalhe(entrega);
+            }
+          },
+          cells: [
+            DataCell(Text(entrega.dataEntrega)),
+            DataCell(
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 180),
+                child: Text(
+                  entrega.nomeCliente,
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ),
+            DataCell(Text("${entrega.quantidadeSacos}")),
+            DataCell(
+              Text(
+                "R\$${entrega.valorPago.toStringAsFixed(2)}",
+                style: TextStyle(
+                  color: entrega.pago ? Colors.green[700] : Colors.red[700],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            DataCell(Text(entrega.formaPagamento)),
+            DataCell(Text(entrega.cidadeCliente)),
+            DataCell(
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
+            ),
+          ],
+        );
+      }).toList(),
+    );
+  }
+}
+
+class _EntregaDia {
+  _EntregaDia({required this.chave, required this.data, required this.rotulo});
+
+  final String chave;
+  final DateTime? data;
+  final String rotulo;
+  final List<Entrega> entregas = [];
+}
+
+class _EntregasMotorista {
+  _EntregasMotorista({required this.id, required this.nome});
+
+  final String id;
+  final String nome;
+  final List<Entrega> entregas = [];
 }

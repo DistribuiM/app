@@ -9,9 +9,14 @@ import '../cubit/client_deliveries_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 
 class ClientDeliveriesSection extends StatefulWidget {
-  const ClientDeliveriesSection({super.key, required this.idCliente});
+  const ClientDeliveriesSection({
+    super.key,
+    required this.idCliente,
+    this.leadingAction,
+  });
 
   final String idCliente;
+  final Widget? leadingAction;
 
   @override
   State<ClientDeliveriesSection> createState() =>
@@ -63,25 +68,35 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
             children: [
               Row(
                 children: [
-                  const Text(
-                    "Entregas",
-                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  Expanded(
+                    child: Row(
+                      children: [
+                        const Text(
+                          "Entregas",
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[300],
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: Text(
+                            "${todasEntregas.length}",
+                            style: const TextStyle(fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 8,
-                      vertical: 2,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: Text(
-                      "${todasEntregas.length}",
-                      style: const TextStyle(fontSize: 14),
-                    ),
-                  ),
+                  if (widget.leadingAction != null) widget.leadingAction!,
                 ],
               ),
               const SizedBox(height: 12),
