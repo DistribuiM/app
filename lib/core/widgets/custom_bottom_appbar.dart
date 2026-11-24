@@ -32,46 +32,70 @@ class CustomBottomAppBar extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: <Widget>[
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      padding: const EdgeInsets.all(0),
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Clientes',
-                      icon: const Icon(Icons.groups),
-                      color: activeIndex == 0 ? Colors.white : Colors.white70,
-                      onPressed: () => selectedIndex.value = 0,
-                    ),
-                    const Text(
-                      "Clientes",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+                Tooltip(
+                  message: 'Clientes',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => selectedIndex.value = 0,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    )
-                  ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.groups,
+                            color: activeIndex == 0
+                                ? Colors.white
+                                : Colors.white70,
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            "Clientes",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
                 if (centerLocations.contains(fabLocation)) const Spacer(),
-                Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    IconButton(
-                      padding: const EdgeInsets.all(0),
-                      constraints: const BoxConstraints(),
-                      tooltip: 'Entregas',
-                      icon: const Icon(Icons.local_shipping),
-                      color: activeIndex == 1 ? Colors.white : Colors.white70,
-                      onPressed: () => selectedIndex.value = 1,
-                    ),
-                    const Text(
-                      "Entregas",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
+                Tooltip(
+                  message: 'Entregas',
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(12),
+                    onTap: () => selectedIndex.value = 1,
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 8,
                       ),
-                    )
-                  ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.local_shipping,
+                            color: activeIndex == 1
+                                ? Colors.white
+                                : Colors.white70,
+                          ),
+                          const SizedBox(height: 2),
+                          const Text(
+                            "Entregas",
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 )
               ],
             ),
