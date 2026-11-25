@@ -6,6 +6,7 @@ import '../../../clients/presentation/pages/client_list.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/custom_bottom_appbar.dart';
 import '../../../deliveries/presentation/pages/delivery_list.dart';
+import '../../../reports/presentation/pages/report_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.usuario});
@@ -95,6 +96,11 @@ class _HomePageState extends State<HomePage> {
         appBar: CustomAppBar(title: 'Entregas'),
         body: DeliveryList(),
       ),
+      if (widget.usuario.isAdmin)
+        TabDestination(
+          appBar: CustomAppBar(title: 'Resumo'),
+          body: ReportPage(usuario: widget.usuario),
+        ),
     ];
 
     return ValueListenableBuilder<int>(
@@ -105,24 +111,31 @@ class _HomePageState extends State<HomePage> {
         return Scaffold(
           appBar: currentTab.appBar,
           body: currentTab.body,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              if (index == 0) {
-                context.push('/clients/new');
-              } else {
-                context.push('/deliveries/new');
-              }
-            },
-            tooltip: index == 0 ? 'Novo cliente' : 'Nova entrega ou pagamento',
-            child: Icon(
-              index == 0 ? Icons.person_add_alt_1 : Icons.add_shopping_cart,
-            ),
-          ),
+          floatingActionButton: index == 2
+              ? null
+              : FloatingActionButton(
+                  onPressed: () {
+                    if (index == 0) {
+                      context.push('/clients/new');
+                    } else {
+                      context.push('/deliveries/new');
+                    }
+                  },
+                  tooltip: index == 0
+                      ? 'Novo cliente'
+                      : 'Nova entrega ou pagamento',
+                  child: Icon(
+                    index == 0
+                        ? Icons.person_add_alt_1
+                        : Icons.add_shopping_cart,
+                  ),
+                ),
           floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
           bottomNavigationBar: CustomBottomAppBar(
             selectedIndex: _selectedIndex,
             fabLocation: FloatingActionButtonLocation.endFloat,
             shape: null,
+            showAdminTab: widget.usuario.isAdmin,
           ),
         );
       },
