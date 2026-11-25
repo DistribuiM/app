@@ -29,4 +29,6 @@ abstract class ClientRepository {
     String? nomeMotoristaResp,
     bool permiteVendasAPrazo = true,
   });
+
+  Future<void> excluirCliente(String id);
 }

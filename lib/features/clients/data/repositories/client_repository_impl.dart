@@ -123,4 +123,18 @@ class ClientRepositoryImpl implements ClientRepository {
       );
     }
   }
+
+  @override
+  Future<void> excluirCliente(String id) async {
+    try {
+      await _clientRemoteDataSource.excluirCliente(id);
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao excluir cliente: $e');
+      throw ServerFailure(
+        'Não foi possível excluir o cliente. Tente novamente.',
+      );
+    }
+  }
 }

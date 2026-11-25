@@ -39,5 +39,8 @@ abstract class DeliveryRepository {
     required bool pago,
     required String observacao,
   });
+
+  Future<void> excluirEntrega(String id);
+
   Future<Uint8List?> buscarComprovante(String idEntrega);
 }

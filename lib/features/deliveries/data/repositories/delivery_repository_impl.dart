@@ -12,9 +12,7 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
 
   @override
   Stream<List<Entrega>> ouvirEntregas({String? idMotorista}) {
-    return _deliveryRemoteDataSource.ouvirEntregas(
-      idMotorista: idMotorista,
-    );
+    return _deliveryRemoteDataSource.ouvirEntregas(idMotorista: idMotorista);
   }
 
   @override
@@ -85,7 +83,9 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       rethrow;
     } catch (e) {
       debugPrint('Erro ao registrar entrega: $e');
-      throw ServerFailure('Não foi possível registrar a entrega. Tente novamente.');
+      throw ServerFailure(
+        'Não foi possível registrar a entrega. Tente novamente.',
+      );
     }
   }
 
@@ -126,6 +126,21 @@ class DeliveryRepositoryImpl implements DeliveryRepository {
       );
     }
   }
+
+  @override
+  Future<void> excluirEntrega(String id) async {
+    try {
+      await _deliveryRemoteDataSource.excluirEntrega(id);
+    } on Failure {
+      rethrow;
+    } catch (e) {
+      debugPrint('Erro ao excluir entrega: $e');
+      throw ServerFailure(
+        'Não foi possível excluir a entrega. Tente novamente.',
+      );
+    }
+  }
+
   @override
   Future<Uint8List?> buscarComprovante(String idEntrega) async {
     try {

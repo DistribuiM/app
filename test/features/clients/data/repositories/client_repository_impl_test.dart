@@ -461,4 +461,36 @@ void main() {
       ).called(1);
     });
   });
+
+  group('excluirCliente', () {
+    test('repassa o id e completa quando o data source tem sucesso', () async {
+      when(() => dataSource.excluirCliente(id)).thenAnswer((_) async {});
+
+      await expectLater(repository.excluirCliente(id), completes);
+
+      verify(() => dataSource.excluirCliente(id)).called(1);
+    });
+
+    test('relança a mesma Failure do data source', () async {
+      const failure = ValidationFailure('Não pode excluir');
+      when(() => dataSource.excluirCliente(id)).thenThrow(failure);
+
+      await expectLater(repository.excluirCliente(id), throwsA(same(failure)));
+    });
+
+    test('converte erro técnico em ServerFailure', () async {
+      when(() => dataSource.excluirCliente(id)).thenThrow(Exception('falha'));
+
+      await expectLater(
+        repository.excluirCliente(id),
+        throwsA(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível excluir o cliente. Tente novamente.',
+          ),
+        ),
+      );
+    });
+  });
 }

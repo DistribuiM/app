@@ -126,6 +126,33 @@ class ClientRemoteDataSource {
     return Cliente.fromMap(doc.data()!, doc.id);
   }
 
+  Future<void> excluirCliente(String id) async {
+    final clienteRef = _db.collection('clientes').doc(id);
+    final clienteDoc = await clienteRef.get();
+    if (!clienteDoc.exists) {
+      throw const ValidationFailure('Cliente não encontrado.');
+    }
+
+    final entregas = await _db
+        .collection('entregas')
+        .where('cliente.id', isEqualTo: id)
+        .limit(1)
+        .get();
+    final pagamentos = await _db
+        .collection('pagamentos')
+        .where('cliente.id', isEqualTo: id)
+        .limit(1)
+        .get();
+
+    if (entregas.docs.isNotEmpty || pagamentos.docs.isNotEmpty) {
+      throw const ValidationFailure(
+        'Não é possível excluir um cliente com entregas ou pagamentos registrados.',
+      );
+    }
+
+    await clienteRef.delete();
+  }
+
   // Procura por id
   Future<Map<String, dynamic>?> buscarClientePorId(String id) async {
     try {
