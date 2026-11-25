@@ -1,6 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/di/injection_container.dart';
+import '../../../clients/domain/entities/cliente.dart';
+import '../../../clients/presentation/cubit/client_list_cubit.dart';
+import '../../../clients/presentation/cubit/client_list_state.dart';
+import '../../../clients/presentation/models/cliente_filtro.dart';
+import '../../../clients/presentation/widgets/filtro_clientes_sheet.dart';
 import '../../../auth/domain/entities/usuario.dart';
 import '../../../clients/presentation/pages/client_list.dart';
 import '../../../../core/widgets/custom_appbar.dart';
@@ -22,6 +29,7 @@ class _HomePageState extends State<HomePage> {
       TextEditingController();
   bool _buscaClientesAberta = false;
   String _consultaNomeCliente = '';
+  ClienteFiltro _filtroClientes = const ClienteFiltro();
 
   @override
   void dispose() {
@@ -41,6 +49,41 @@ class _HomePageState extends State<HomePage> {
         _consultaNomeCliente = '';
       }
     });
+  }
+
+    Future<void> _abrirFiltros(BuildContext context) async {
+    final estado = context.read<ClientListCubit>().state;
+    final clientes = estado is ClientListLoaded
+        ? estado.clientes
+        : <Cliente>[];
+
+    final cidades = clientes
+        .map((cliente) => cliente.endereco.cidade)
+        .where((cidade) => cidade.isNotEmpty)
+        .toSet()
+        .toList()
+      ..sort();
+
+    final motoristas = <String, String>{};
+    for (final cliente in clientes) {
+      motoristas[cliente.idMotoristaResp] = cliente.nomeMotoristaResp;
+    }
+
+    final resultado = await showModalBottomSheet<ClienteFiltro>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (_) => FiltroClientesSheet(
+        filtroAtual: _filtroClientes,
+        cidades: cidades,
+        // Só o admin filtra por motorista
+        motoristas: widget.usuario.isAdmin ? motoristas : const {},
+      ),
+    );
+
+    if (resultado != null && mounted) {
+      setState(() => _filtroClientes = resultado);
+    }
   }
 
   @override
@@ -79,6 +122,17 @@ class _HomePageState extends State<HomePage> {
                   ),
           ),
           actions: [
+            Builder(
+              builder: (contexto) => IconButton(
+                tooltip: 'Filtros',
+                icon: Badge(
+                  isLabelVisible: _filtroClientes.quantidadeAtivos > 0,
+                  label: Text('${_filtroClientes.quantidadeAtivos}'),
+                  child: const Icon(Icons.filter_list, color: Colors.white),
+                ),
+                onPressed: () => _abrirFiltros(contexto),
+              ),
+            ),
             IconButton(
               tooltip: _buscaClientesAberta ? 'Fechar busca' : 'Buscar cliente',
               icon: Icon(
@@ -89,7 +143,11 @@ class _HomePageState extends State<HomePage> {
             ),
           ],
         ),
-        body: ClientList(searchQuery: _consultaNomeCliente),
+        body: ClientList(
+          usuario: widget.usuario,
+          searchQuery: _consultaNomeCliente,
+          filtro: _filtroClientes,
+        ),
       ),
       TabDestination(
         appBar: CustomAppBar(title: 'Entregas'),
@@ -97,7 +155,9 @@ class _HomePageState extends State<HomePage> {
       ),
     ];
 
-    return ValueListenableBuilder<int>(
+    return BlocProvider<ClientListCubit>(
+      create: (_) => getIt<ClientListCubit>()..ouvirClientes(widget.usuario),
+      child: ValueListenableBuilder<int>(
       valueListenable: _selectedIndex,
       builder: (context, index, child) {
         final currentTab = destinations[index];
@@ -126,6 +186,7 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    ),
     );
   }
 }
