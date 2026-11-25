@@ -46,8 +46,9 @@ class _DeliveryListState extends State<DeliveryList> {
 
     final dias = agrupado.values.toList()
       ..sort((a, b) {
-        if (a.data == null)
+        if (a.data == null) {
           return b.data == null ? a.rotulo.compareTo(b.rotulo) : 1;
+        }
         if (b.data == null) return -1;
         return b.data!.compareTo(a.data!);
       });
