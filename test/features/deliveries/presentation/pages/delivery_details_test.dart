@@ -3,6 +3,8 @@ import 'package:app_distribuim/features/auth/domain/entities/usuario.dart';
 import 'package:app_distribuim/features/auth/presentation/cubit/session_cubit.dart';
 import 'package:app_distribuim/features/auth/presentation/cubit/session_state.dart';
 import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
+import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_delete_cubit.dart';
+import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_delete_state.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_cubit.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_state.dart';
 import 'package:app_distribuim/features/deliveries/presentation/pages/delivery_details.dart';
@@ -14,6 +16,9 @@ import 'package:mocktail/mocktail.dart';
 
 class MockDeliveryDetailsCubit extends MockCubit<DeliveryDetailsState>
     implements DeliveryDetailsCubit {}
+
+class MockDeliveryDeleteCubit extends MockCubit<DeliveryDeleteState>
+    implements DeliveryDeleteCubit {}
 
 class MockSessionCubit extends MockCubit<SessionState>
     implements SessionCubit {}
@@ -88,6 +93,14 @@ void main() {
       initialState: initialState,
     );
     getIt.registerFactory<DeliveryDetailsCubit>(() => deliveryDetailsCubit);
+
+    final deliveryDeleteCubit = MockDeliveryDeleteCubit();
+    whenListen(
+      deliveryDeleteCubit,
+      const Stream<DeliveryDeleteState>.empty(),
+      initialState: DeliveryDeleteInitial(),
+    );
+    getIt.registerFactory<DeliveryDeleteCubit>(() => deliveryDeleteCubit);
   }
 
   testWidgets('exibe os dados da entrega e do pagamento', (tester) async {
@@ -178,6 +191,24 @@ void main() {
     expect(find.byTooltip('Editar entrega'), findsOneWidget);
   });
 
+  testWidgets('admin pode abrir a confirmação para excluir entrega', (
+    tester,
+  ) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(
+      _buildPage(entrega, _usuario(id: 'admin-1', cargo: CargoUsuario.admin)),
+    );
+
+    expect(find.byTooltip('Opções da entrega'), findsOneWidget);
+    await tester.tap(find.byTooltip('Opções da entrega'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Excluir entrega'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Excluir entrega?'), findsOneWidget);
+  });
+
   testWidgets('motorista pode editar a própria entrega', (tester) async {
     final entrega = _makeEntrega();
     registerCubit(DeliveryDetailsLoaded(entrega), entrega);
@@ -194,5 +225,13 @@ void main() {
     await tester.pumpWidget(_buildPage(entrega, _usuario(id: 'outro-1')));
 
     expect(find.byTooltip('Editar entrega'), findsNothing);
+  });
+
+  testWidgets('motorista não vê opção de excluir entrega', (tester) async {
+    final entrega = _makeEntrega();
+    registerCubit(DeliveryDetailsLoaded(entrega), entrega);
+    await tester.pumpWidget(_buildPage(entrega, _usuario()));
+
+    expect(find.byTooltip('Opções da entrega'), findsNothing);
   });
 }

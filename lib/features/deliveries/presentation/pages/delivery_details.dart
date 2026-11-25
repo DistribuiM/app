@@ -7,6 +7,8 @@ import '../../../../core/widgets/custom_appbar.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
+import '../cubit/delivery_delete_cubit.dart';
+import '../cubit/delivery_delete_state.dart';
 import '../cubit/delivery_details_cubit.dart';
 import '../cubit/delivery_details_state.dart';
 
@@ -18,60 +20,158 @@ class EntregaPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sessionState = context.watch<SessionCubit>().state;
+    final usuario = sessionState is SessionAuthenticated
+        ? sessionState.usuario
+        : null;
 
-    return BlocProvider(
-      create: (_) => getIt<DeliveryDetailsCubit>()..ouvirEntrega(entrega),
-      child: BlocBuilder<DeliveryDetailsCubit, DeliveryDetailsState>(
-        builder: (context, state) {
-          final entregaAtual = state is DeliveryDetailsLoaded
-              ? state.entrega
-              : null;
-          final usuario = sessionState is SessionAuthenticated
-              ? sessionState.usuario
-              : null;
-          final podeEditar =
-              entregaAtual != null &&
-              usuario != null &&
-              (usuario.isAdmin || entregaAtual.idMotorista == usuario.id);
-
-          return Scaffold(
-            backgroundColor: const Color(0xFFF7F8F5),
-            appBar: const CustomAppBar(
-              title: 'Detalhe da Entrega',
-              leading: true,
-            ),
-            body: SafeArea(
-              child: switch (state) {
-                DeliveryDetailsLoaded loaded => _buildEntregaContent(
-                  loaded.entrega,
-                  loaded,
-                ),
-                DeliveryDetailsNotFound() => const Center(
-                  child: Text('Entrega não encontrada'),
-                ),
-                DeliveryDetailsError(:final message) => Center(
-                  child: Text(
-                    message,
-                    style: const TextStyle(color: Colors.red),
-                  ),
-                ),
-                DeliveryDetailsInitial() => const SizedBox.shrink(),
-              },
-            ),
-            floatingActionButton: podeEditar
-                ? FloatingActionButton(
-                    backgroundColor: Colors.green[700],
-                    foregroundColor: Colors.white,
-                    tooltip: 'Editar entrega',
-                    onPressed: () => context.push(
-                      '/deliveries/${entregaAtual.id}/edit',
-                      extra: entregaAtual,
-                    ),
-                    child: const Icon(Icons.edit),
-                  )
-                : null,
-          );
+    return BlocProvider<DeliveryDeleteCubit>(
+      create: (_) => getIt<DeliveryDeleteCubit>(),
+      child: BlocListener<DeliveryDeleteCubit, DeliveryDeleteState>(
+        listener: (context, state) {
+          if (state is DeliveryDeleteSuccess) {
+            context.pop();
+          } else if (state is DeliveryDeleteError) {
+            ScaffoldMessenger.of(
+              context,
+            ).showSnackBar(SnackBar(content: Text(state.message)));
+          }
         },
+        child: BlocProvider(
+          create: (_) => getIt<DeliveryDetailsCubit>()..ouvirEntrega(entrega),
+          child: BlocBuilder<DeliveryDetailsCubit, DeliveryDetailsState>(
+            builder: (context, state) {
+              final entregaAtual = state is DeliveryDetailsLoaded
+                  ? state.entrega
+                  : null;
+              final podeEditar =
+                  entregaAtual != null &&
+                  usuario != null &&
+                  (usuario.isAdmin || entregaAtual.idMotorista == usuario.id);
+
+              return Scaffold(
+                backgroundColor: const Color(0xFFF7F8F5),
+                appBar: CustomAppBar(
+                  title: 'Detalhe da Entrega',
+                  leading: true,
+                  actions: [
+                    if (entregaAtual != null && usuario?.isAdmin == true)
+                      BlocBuilder<DeliveryDeleteCubit, DeliveryDeleteState>(
+                        builder: (context, deleteState) {
+                          if (deleteState is DeliveryDeleteLoading) {
+                            return const IconButton(
+                              onPressed: null,
+                              tooltip: 'Excluindo entrega',
+                              icon: SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            );
+                          }
+
+                          return PopupMenuButton<String>(
+                            icon: const Icon(
+                              Icons.more_vert,
+                              color: Colors.white,
+                            ),
+                            tooltip: 'Opções da entrega',
+                            onSelected: (opcao) async {
+                              if (opcao != 'excluir') return;
+                              final confirmar = await showDialog<bool>(
+                                context: context,
+                                builder: (dialogContext) => AlertDialog(
+                                  title: const Text('Excluir entrega?'),
+                                  content: const Text(
+                                    'Esta ação não pode ser desfeita.',
+                                  ),
+                                  actions: [
+                                    TextButton(
+                                      onPressed: () => dialogContext.pop(false),
+                                      child: const Text('Cancelar'),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => dialogContext.pop(true),
+                                      child: const Text(
+                                        'Excluir',
+                                        style: TextStyle(color: Colors.red),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                              if (confirmar != true || !context.mounted) {
+                                return;
+                              }
+                              final atual = context.read<SessionCubit>().state;
+                              if (atual is SessionAuthenticated) {
+                                context
+                                    .read<DeliveryDeleteCubit>()
+                                    .excluirEntrega(
+                                      atual.usuario,
+                                      entregaAtual.id,
+                                    );
+                              }
+                            },
+                            itemBuilder: (_) => const [
+                              PopupMenuItem(
+                                value: 'excluir',
+                                child: Row(
+                                  children: [
+                                    Icon(
+                                      Icons.delete_outline,
+                                      color: Colors.red,
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      'Excluir entrega',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                  ],
+                ),
+                body: SafeArea(
+                  child: switch (state) {
+                    DeliveryDetailsLoaded loaded => _buildEntregaContent(
+                      loaded.entrega,
+                      loaded,
+                    ),
+                    DeliveryDetailsNotFound() => const Center(
+                      child: Text('Entrega não encontrada'),
+                    ),
+                    DeliveryDetailsError(:final message) => Center(
+                      child: Text(
+                        message,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ),
+                    DeliveryDetailsInitial() => const SizedBox.shrink(),
+                  },
+                ),
+                floatingActionButton: podeEditar
+                    ? FloatingActionButton(
+                        backgroundColor: Colors.green[700],
+                        foregroundColor: Colors.white,
+                        tooltip: 'Editar entrega',
+                        onPressed: () => context.push(
+                          '/deliveries/${entregaAtual.id}/edit',
+                          extra: entregaAtual,
+                        ),
+                        child: const Icon(Icons.edit),
+                      )
+                    : null,
+              );
+            },
+          ),
+        ),
       ),
     );
   }

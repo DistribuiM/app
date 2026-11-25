@@ -290,6 +290,40 @@ void main() {
     });
   });
 
+  group('excluirEntrega', () {
+    const id = 'entrega-1';
+
+    test('repassa o id e completa quando o data source tem sucesso', () async {
+      when(() => dataSource.excluirEntrega(id)).thenAnswer((_) async {});
+
+      await expectLater(repository.excluirEntrega(id), completes);
+
+      verify(() => dataSource.excluirEntrega(id)).called(1);
+    });
+
+    test('relança a mesma Failure do data source', () async {
+      const failure = ValidationFailure('Entrega não encontrada.');
+      when(() => dataSource.excluirEntrega(id)).thenThrow(failure);
+
+      await expectLater(repository.excluirEntrega(id), throwsA(same(failure)));
+    });
+
+    test('converte erro técnico em ServerFailure', () async {
+      when(() => dataSource.excluirEntrega(id)).thenThrow(Exception('falha'));
+
+      await expectLater(
+        repository.excluirEntrega(id),
+        throwsA(
+          isA<ServerFailure>().having(
+            (failure) => failure.message,
+            'message',
+            'Não foi possível excluir a entrega. Tente novamente.',
+          ),
+        ),
+      );
+    });
+  });
+
   test('relança a mesma Failure lançada pelo data source', () async {
     const failure = ValidationFailure('msg');
     when(

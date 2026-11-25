@@ -32,10 +32,7 @@ class DeliveryRemoteDataSource {
     batch.set(docRef, {
       "id": docRef.id,
       "dataEntrega": dataEntrega,
-      "motorista": {
-        "id": idMotorista,
-        "nome": nomeMotorista,
-      },
+      "motorista": {"id": idMotorista, "nome": nomeMotorista},
       "cliente": {
         "id": idCliente,
         "nome": nomeCliente,
@@ -49,10 +46,7 @@ class DeliveryRemoteDataSource {
         "valorPendente": valorPendente,
       },
       "formaPagamento": formaPagamento,
-      "status": {
-        "pago": pago,
-        "entregue": entregue,
-      },
+      "status": {"pago": pago, "entregue": entregue},
       "observacao": observacao,
       "temComprovante": comprovanteBytes != null,
     });
@@ -123,6 +117,49 @@ class DeliveryRemoteDataSource {
     debugPrint('SUCESSO: Entrega atualizada perfeitamente!');
   }
 
+  Future<void> excluirEntrega(String id) async {
+    final entregaRef = _db.collection('entregas').doc(id);
+    final comprovanteRef = _db.collection('comprovantes').doc(id);
+
+    await _db.runTransaction<void>((transaction) async {
+      final entregaDoc = await transaction.get(entregaRef);
+      if (!entregaDoc.exists) {
+        throw const ValidationFailure('Entrega não encontrada.');
+      }
+
+      final dados = entregaDoc.data()!;
+      final cliente = dados['cliente'];
+      final financeiro = dados['financeiro'];
+      if (cliente is! Map ||
+          cliente['id'] is! String ||
+          financeiro is! Map ||
+          financeiro['valorPendente'] is! num) {
+        throw const ValidationFailure(
+          'Não foi possível excluir a entrega porque seus dados financeiros estão inválidos.',
+        );
+      }
+
+      final clienteRef = _db
+          .collection('clientes')
+          .doc(cliente['id'] as String);
+      final clienteDoc = await transaction.get(clienteRef);
+      if (!clienteDoc.exists) {
+        throw const ValidationFailure(
+          'Não foi possível excluir a entrega porque o cliente não foi encontrado.',
+        );
+      }
+
+      final valorPendente = (financeiro['valorPendente'] as num).toDouble();
+      transaction.update(clienteRef, {
+        'financeiro.saldoPendente': FieldValue.increment(-valorPendente),
+      });
+      transaction.delete(entregaRef);
+      transaction.delete(comprovanteRef);
+    });
+
+    debugPrint('SUCESSO: Entrega excluída perfeitamente!');
+  }
+
   // Ouve todas as entregas em tempo real
   Stream<List<Entrega>> ouvirEntregas({String? idMotorista}) {
     final entregas = _db.collection('entregas');
@@ -164,15 +201,17 @@ class DeliveryRemoteDataSource {
 
   // Ouve as entregas de um cliente em tempo real
   Stream<List<Entrega>> ouvirEntregasDoCliente(String idCliente) {
-    return _db.collection('entregas')
-      .where('cliente.id', isEqualTo: idCliente)
-      .snapshots()
-      .map((snapshot) {
-        return snapshot.docs.map((doc) {
-          return Entrega.fromMap(doc.data(), doc.id);
-        }).toList();
-      });
+    return _db
+        .collection('entregas')
+        .where('cliente.id', isEqualTo: idCliente)
+        .snapshots()
+        .map((snapshot) {
+          return snapshot.docs.map((doc) {
+            return Entrega.fromMap(doc.data(), doc.id);
+          }).toList();
+        });
   }
+
   Future<Uint8List?> buscarComprovante(String idEntrega) async {
     final doc = await _db.collection('comprovantes').doc(idEntrega).get();
     if (!doc.exists) return null;
