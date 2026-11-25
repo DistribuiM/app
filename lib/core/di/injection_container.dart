@@ -121,7 +121,10 @@ void setupDependencies() {
 
   if (!getIt.isRegistered<DeliveryListCubit>()) {
     getIt.registerFactory<DeliveryListCubit>(
-      () => DeliveryListCubit(getIt<DeliveryRepository>()),
+      () => DeliveryListCubit(
+        getIt<DeliveryRepository>(),
+        getIt<PaymentRepository>(),
+      ),
     );
   }
 
