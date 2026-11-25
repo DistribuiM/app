@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/di/injection_container.dart';
+import '../../../../core/utils/contact_launcher.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/cliente.dart';
@@ -353,14 +354,19 @@ class _ClientListState extends State<ClientList> {
                       icon: const Icon(Icons.edit),
                     ),
                     IconButton(
-                      onPressed: () {
-                        // final telefone = cliente['telefone'];
-                        // abrir discador
-                      },
+                      tooltip: 'Ligar para ${cliente.nome}',
+                      onPressed: () => runContactAction(
+                        context,
+                        () => openPhoneCall(cliente.telefone),
+                      ),
                       icon: const Icon(Icons.phone),
                     ),
                     IconButton(
-                      onPressed: () {},
+                      tooltip: 'Abrir WhatsApp de ${cliente.nome}',
+                      onPressed: () => runContactAction(
+                        context,
+                        () => openWhatsApp(cliente.telefone),
+                      ),
                       icon: const Icon(Icons.chat_bubble),
                     ),
                   ],

@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/widgets/custom_appbar.dart';
+import '../../../../core/utils/contact_launcher.dart';
 import '../../domain/entities/cliente.dart';
 import '../../../deliveries/presentation/widgets/client_deliveries_section.dart';
 
@@ -19,6 +21,14 @@ class _ClientePageState extends State<ClientePage> {
   Widget build(BuildContext context) {
     final cliente = widget.cliente;
     final endereco = cliente.endereco;
+    final valorPendente = NumberFormat.currency(
+      locale: 'pt_BR',
+      symbol: 'R\$',
+    ).format(cliente.saldoPendente);
+    final mensagemCobranca =
+        'Olá, ${cliente.nome}! Tudo bem? Passando para lembrar que consta '
+        'um saldo pendente de $valorPendente. Quando puder, poderia verificar, '
+        'por favor? Agradecemos!';
 
     return Scaffold(
       appBar: const CustomAppBar(title: 'Ficha do Cliente', leading: true),
@@ -59,13 +69,56 @@ class _ClientePageState extends State<ClientePage> {
 
               // Valor pendente
               const _Label(text: "Valor Pendente do Cliente"),
-              Text(
-                "R\$${cliente.saldoPendente.toStringAsFixed(2)}",
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.red,
-                ),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      "R\$${cliente.saldoPendente.toStringAsFixed(2)}",
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Enviar cobrança pelo WhatsApp',
+                    onPressed: () => runContactAction(
+                      context,
+                      () => openWhatsApp(
+                        cliente.telefone,
+                        message: mensagemCobranca,
+                      ),
+                    ),
+                    icon: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Icon(
+                          Icons.chat_bubble,
+                          color: Colors.grey[600],
+                          size: 24,
+                        ),
+                        Positioned.fill(
+                          child: Center(
+                            child: Transform.translate(
+                              offset: const Offset(0, -1.5),
+                              child: const Text(
+                                '\$',
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 11,
+                                  height: 1,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
               ),
               if (!cliente.permiteVendasAPrazo)
                 const Text(
@@ -80,17 +133,9 @@ class _ClientePageState extends State<ClientePage> {
 
               // Endereço
               const _Label(text: "Endereço"),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Expanded(
-                    child: Text(
-                      "${endereco.rua}${endereco.complemento.isNotEmpty ? ', ${endereco.complemento}' : ''}",
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ),
-                  Icon(Icons.location_on, color: Colors.grey[600]),
-                ],
+              Text(
+                "${endereco.rua}${endereco.complemento.isNotEmpty ? ', ${endereco.complemento}' : ''}",
+                style: const TextStyle(fontSize: 16),
               ),
               const SizedBox(height: 20),
 
@@ -104,12 +149,30 @@ class _ClientePageState extends State<ClientePage> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(cliente.telefone, style: const TextStyle(fontSize: 16)),
+                  Expanded(
+                    child: Text(
+                      cliente.telefone,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ),
                   Row(
                     children: [
-                      Icon(Icons.phone, color: Colors.grey[600]),
-                      const SizedBox(width: 8),
-                      Icon(Icons.chat_bubble, color: Colors.grey[600]),
+                      IconButton(
+                        tooltip: 'Ligar para ${cliente.nome}',
+                        onPressed: () => runContactAction(
+                          context,
+                          () => openPhoneCall(cliente.telefone),
+                        ),
+                        icon: Icon(Icons.phone, color: Colors.grey[600]),
+                      ),
+                      IconButton(
+                        tooltip: 'Abrir WhatsApp de ${cliente.nome}',
+                        onPressed: () => runContactAction(
+                          context,
+                          () => openWhatsApp(cliente.telefone),
+                        ),
+                        icon: Icon(Icons.chat_bubble, color: Colors.grey[600]),
+                      ),
                     ],
                   ),
                 ],
