@@ -17,13 +17,15 @@ import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../../clients/domain/entities/cliente.dart';
 import '../../domain/entities/entrega.dart';
+import '../../../payments/domain/entities/pagamento.dart';
 import '../cubit/delivery_form_cubit.dart';
 import '../cubit/delivery_form_state.dart';
 
 class DeliveryForm extends StatefulWidget {
-  const DeliveryForm({super.key, this.entrega, this.cliente});
+  const DeliveryForm({super.key, this.entrega, this.pagamento, this.cliente});
 
   final Entrega? entrega;
+  final Pagamento? pagamento;
   final Cliente? cliente;
 
   @override
@@ -32,7 +34,8 @@ class DeliveryForm extends StatefulWidget {
 
 class _DeliveryFormState extends State<DeliveryForm> {
   int _tipo = 0;
-  bool get _ehPagamento => widget.entrega == null && _tipo == 1;
+  bool get _ehPagamento =>
+      widget.pagamento != null || (widget.entrega == null && _tipo == 1);
 
   final List<Segment> segments = const [
     Segment(value: 0, label: 'Entrega de Milho', icon: Icons.local_shipping),
@@ -60,9 +63,11 @@ class _DeliveryFormState extends State<DeliveryForm> {
   void initState() {
     super.initState();
     final entrega = widget.entrega;
-    _dataEntrega = entrega == null || entrega.dataEntrega.isEmpty
+    final pagamento = widget.pagamento;
+    final dataInicial = entrega?.dataEntrega ?? pagamento?.data;
+    _dataEntrega = dataInicial == null || dataInicial.isEmpty
         ? DateFormat('dd/MM/yyyy').format(DateTime.now())
-        : entrega.dataEntrega;
+        : dataInicial;
     if (entrega != null) {
       _quantidadeController.text = entrega.quantidadeSacos.toString();
       _clientePagou = entrega.formaPagamento != 'Nenhum';
@@ -76,6 +81,14 @@ class _DeliveryFormState extends State<DeliveryForm> {
       _precoUnitario = entrega.precoUnitario.toInt();
       const formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
       final indiceForma = formasPagamento.indexOf(entrega.formaPagamento);
+      _formaPagamento = indiceForma < 0 ? 0 : indiceForma;
+    } else if (pagamento != null) {
+      final valor = pagamento.valor;
+      _valorPagoController.text = valor % 1 == 0
+          ? valor.toInt().toString()
+          : valor.toString();
+      const formasPagamento = ['Dinheiro', 'Pix', 'Cartão'];
+      final indiceForma = formasPagamento.indexOf(pagamento.formaPagamento);
       _formaPagamento = indiceForma < 0 ? 0 : indiceForma;
     }
   }
@@ -101,9 +114,11 @@ class _DeliveryFormState extends State<DeliveryForm> {
     }
 
     return BlocProvider<DeliveryFormCubit>(
-      create: (_) =>
-          getIt<DeliveryFormCubit>()
-            ..carregarDados(usuario, incluirClientes: widget.entrega == null),
+      create: (_) => getIt<DeliveryFormCubit>()
+        ..carregarDados(
+          usuario,
+          incluirClientes: widget.entrega == null && widget.pagamento == null,
+        ),
       child: BlocConsumer<DeliveryFormCubit, DeliveryFormState>(
         listener: (context, state) {
           if (state is DeliveryFormLoaded) {
@@ -120,11 +135,14 @@ class _DeliveryFormState extends State<DeliveryForm> {
             if (!_motoristaInicializado) {
               Usuario? motoristaInicial;
               if (usuario.isAdmin) {
-                if (widget.entrega == null) {
+                final idMotoristaAtual =
+                    widget.entrega?.idMotorista ??
+                    widget.pagamento?.idMotorista;
+                if (idMotoristaAtual == null) {
                   motoristaInicial = usuario;
                 } else {
                   for (final motorista in state.motoristas) {
-                    if (motorista.id == widget.entrega!.idMotorista) {
+                    if (motorista.id == idMotoristaAtual) {
                       motoristaInicial = motorista;
                       break;
                     }
@@ -170,6 +188,8 @@ class _DeliveryFormState extends State<DeliveryForm> {
             appBar: CustomAppBar(
               title: widget.entrega != null
                   ? 'Editar Entrega'
+                  : widget.pagamento != null
+                  ? 'Editar Pagamento'
                   : _ehPagamento
                   ? 'Cadastro de Pagamento'
                   : 'Cadastro de Entrega',
@@ -181,7 +201,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
                 padding: const EdgeInsets.all(36),
                 child: Column(
                   children: [
-                    if (widget.entrega == null) ...[
+                    if (widget.entrega == null && widget.pagamento == null) ...[
                       CustomSegmentedButton(
                         segments: segments,
                         initialValue: _tipo,
@@ -214,7 +234,9 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             onPressed: () {
                               context.read<DeliveryFormCubit>().carregarDados(
                                 usuario,
-                                incluirClientes: widget.entrega == null,
+                                incluirClientes:
+                                    widget.entrega == null &&
+                                    widget.pagamento == null,
                               );
                             },
                             child: const Text('Tentar novamente'),
@@ -241,7 +263,15 @@ class _DeliveryFormState extends State<DeliveryForm> {
 
                     if (!carregando && state is! DeliveryFormLoadError)
                       widget.entrega != null
-                          ? _campoCliente(widget.entrega!)
+                          ? _campoCliente(
+                              widget.entrega!.nomeCliente,
+                              widget.entrega!.cidadeCliente,
+                            )
+                          : widget.pagamento != null
+                          ? _campoCliente(
+                              widget.pagamento!.nomeCliente,
+                              widget.pagamento!.cidadeCliente,
+                            )
                           : clientes.isEmpty
                           ? const Center(
                               child: Text('Nenhum cliente cadastrado'),
@@ -340,10 +370,12 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           ),
                           const SizedBox(height: 20),
 
-                          SeletorImagem(
-                            onImageSelected: (imagem) => _comprovante = imagem,
-                          ),
-                          const SizedBox(height: 20),
+                          if (!_ehPagamento)
+                            SeletorImagem(
+                              onImageSelected: (imagem) =>
+                                  _comprovante = imagem,
+                            ),
+                          if (!_ehPagamento) const SizedBox(height: 20),
                         ],
                       ),
                     ),
@@ -380,7 +412,8 @@ class _DeliveryFormState extends State<DeliveryForm> {
                           if (_ehPagamento) {
                             if (_dataEntrega == null ||
                                 motorista == null ||
-                                _clienteSelecionado == null) {
+                                (widget.pagamento == null &&
+                                    _clienteSelecionado == null)) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -392,7 +425,9 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             }
 
                             final valor = _lerValor(_valorPagoController.text);
-                            if (valor == null || valor <= 0) {
+                            if (valor == null ||
+                                !valor.isFinite ||
+                                valor <= 0) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
@@ -400,6 +435,24 @@ class _DeliveryFormState extends State<DeliveryForm> {
                                   ),
                                 ),
                               );
+                              return;
+                            }
+
+                            if (widget.pagamento case final pagamento?) {
+                              await context
+                                  .read<DeliveryFormCubit>()
+                                  .atualizarPagamento(
+                                    id: pagamento.id,
+                                    data: _dataEntrega!,
+                                    idMotorista: motorista.id,
+                                    nomeMotorista: motorista.nome,
+                                    valor: valor,
+                                    formaPagamento: const [
+                                      'Dinheiro',
+                                      'Pix',
+                                      'Cartão',
+                                    ][_formaPagamento],
+                                  );
                               return;
                             }
 
@@ -513,7 +566,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
     return double.tryParse(texto.trim().replaceAll(',', '.'));
   }
 
-  Widget _campoCliente(Entrega entrega) {
+  Widget _campoCliente(String nome, String cidade) {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(14),
@@ -546,10 +599,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
         ),
         child: Align(
           alignment: Alignment.centerLeft,
-          child: Text(
-            '${entrega.nomeCliente} - ${entrega.cidadeCliente}',
-            style: const TextStyle(fontSize: 16),
-          ),
+          child: Text('$nome - $cidade', style: const TextStyle(fontSize: 16)),
         ),
       ),
     );

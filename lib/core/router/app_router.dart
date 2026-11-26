@@ -13,6 +13,8 @@ import '../../features/deliveries/domain/entities/entrega.dart';
 import '../../features/deliveries/presentation/pages/delivery_details.dart';
 import '../../features/deliveries/presentation/pages/delivery_form.dart';
 import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/payments/domain/entities/pagamento.dart';
+import '../../features/payments/presentation/pages/payment_details.dart';
 
 class AuthRefreshNotifier extends ChangeNotifier {
   AuthRefreshNotifier(Stream<Object?> stream) {
@@ -88,6 +90,18 @@ GoRouter createAppRouter(SessionCubit session) {
         redirect: (context, state) => state.extra is Entrega ? null : '/',
         builder: (context, state) =>
             EntregaPage(entrega: state.extra as Entrega),
+      ),
+      GoRoute(
+        path: '/payments/:id/edit',
+        redirect: (context, state) => state.extra is Pagamento ? null : '/',
+        builder: (context, state) =>
+            DeliveryForm(pagamento: state.extra as Pagamento),
+      ),
+      GoRoute(
+        path: '/payments/:id',
+        redirect: (context, state) => state.extra is Pagamento ? null : '/',
+        builder: (context, state) =>
+            PagamentoPage(pagamento: state.extra as Pagamento),
       ),
     ],
   );

@@ -9,6 +9,7 @@ import 'package:app_distribuim/features/clients/presentation/cubit/client_delete
 import 'package:app_distribuim/features/clients/presentation/pages/client_details.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/client_deliveries_cubit.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_list_state.dart';
+import 'package:app_distribuim/features/payments/domain/entities/pagamento.dart';
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -53,6 +54,7 @@ void main() {
   Future<void> renderPage(
     WidgetTester tester, {
     required CargoUsuario cargo,
+    List<Pagamento> pagamentos = const [],
   }) async {
     final sessionCubit = MockSessionCubit();
     whenListen(
@@ -76,7 +78,7 @@ void main() {
     whenListen(
       deliveriesCubit,
       const Stream<DeliveryListState>.empty(),
-      initialState: const DeliveryListLoaded([]),
+      initialState: DeliveryListLoaded([], pagamentos: pagamentos),
     );
     getIt.registerFactory<ClientDeliveriesCubit>(() => deliveriesCubit);
 
@@ -111,5 +113,32 @@ void main() {
 
     expect(find.byTooltip('Opções do cliente'), findsNothing);
     expect(find.byTooltip('Sair'), findsOneWidget);
+  });
+
+  testWidgets('exibe pagamentos avulsos do cliente na tabela de Entregas', (
+    tester,
+  ) async {
+    final pagamento = Pagamento(
+      id: 'pagamento-1',
+      data: '24/11/2026',
+      idMotorista: 'motorista-1',
+      nomeMotorista: 'Motorista',
+      idCliente: cliente.id,
+      nomeCliente: cliente.nome,
+      cidadeCliente: cliente.endereco.cidade,
+      valor: 35,
+      formaPagamento: 'Dinheiro',
+    );
+    await renderPage(
+      tester,
+      cargo: CargoUsuario.motorista,
+      pagamentos: [pagamento],
+    );
+
+    expect(find.text('Entregas'), findsOneWidget);
+    expect(find.text('Pagamento'), findsOneWidget);
+    expect(find.text(pagamento.data), findsOneWidget);
+    expect(find.text('R\$35.00'), findsOneWidget);
+    expect(find.text('Dinheiro'), findsOneWidget);
   });
 }
