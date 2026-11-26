@@ -1,6 +1,7 @@
 import 'package:app_distribuim/core/error/failures.dart';
 import 'package:app_distribuim/features/payments/data/datasources/payment_remote_data_source.dart';
 import 'package:app_distribuim/features/payments/data/repositories/payment_repository_impl.dart';
+import 'package:app_distribuim/features/payments/domain/entities/pagamento.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
 
@@ -19,6 +20,17 @@ void main() {
   const cidadeCliente = 'Cidade';
   const valor = 50.5;
   const formaPagamento = 'Pix';
+  final pagamento = Pagamento(
+    id: 'pagamento-1',
+    data: data,
+    idMotorista: idMotorista,
+    nomeMotorista: nomeMotorista,
+    idCliente: idCliente,
+    nomeCliente: nomeCliente,
+    cidadeCliente: cidadeCliente,
+    valor: valor,
+    formaPagamento: formaPagamento,
+  );
 
   setUp(() {
     dataSource = MockPaymentRemoteDataSource();
@@ -97,6 +109,38 @@ void main() {
         formaPagamento: formaPagamento,
       ),
     ).called(1);
+  });
+
+  test('ouve pagamentos e repassa o filtro de motorista', () async {
+    when(
+      () => dataSource.ouvirPagamentos(idMotorista: idMotorista),
+    ).thenAnswer((_) => Stream.value([pagamento]));
+
+    await expectLater(
+      repository.ouvirPagamentos(idMotorista: idMotorista),
+      emits([same(pagamento)]),
+    );
+
+    verify(
+      () => dataSource.ouvirPagamentos(idMotorista: idMotorista),
+    ).called(1);
+  });
+
+  test('converte erros técnicos do stream em ServerFailure', () async {
+    when(
+      () => dataSource.ouvirPagamentos(idMotorista: null),
+    ).thenAnswer((_) => Stream.error(Exception('Falha técnica')));
+
+    await expectLater(
+      repository.ouvirPagamentos(),
+      emitsError(
+        isA<ServerFailure>().having(
+          (failure) => failure.message,
+          'message',
+          'Não foi possível carregar os pagamentos. Tente novamente.',
+        ),
+      ),
+    );
   });
 }
 

@@ -25,6 +25,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final ValueNotifier<int> _selectedIndex = ValueNotifier<int>(0);
+  final GlobalKey<DeliveryListPageState> _deliveryListKey =
+      GlobalKey<DeliveryListPageState>();
   final TextEditingController _buscaClientesController =
       TextEditingController();
   bool _buscaClientesAberta = false;
@@ -150,8 +152,17 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       TabDestination(
-        appBar: CustomAppBar(title: 'Entregas'),
-        body: DeliveryList(),
+        appBar: CustomAppBar(
+          title: 'Entregas',
+          actions: [
+            IconButton(
+              tooltip: 'Filtrar entregas',
+              icon: const Icon(Icons.filter_list, color: Colors.white),
+              onPressed: () => _deliveryListKey.currentState?.abrirFiltros(),
+            ),
+          ],
+        ),
+        body: DeliveryList(key: _deliveryListKey),
       ),
     ];
 

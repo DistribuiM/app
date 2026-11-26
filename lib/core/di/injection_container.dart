@@ -132,6 +132,7 @@ void setupDependencies() {
       () => DeliveryListCubit(
         getIt<DeliveryRepository>(),
         getIt<ClientRepository>(),
+        getIt<PaymentRepository>(),
       ),
     );
   }
