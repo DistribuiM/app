@@ -8,6 +8,7 @@ import '../../../../core/widgets/data_row_press_color.dart';
 import '../../../auth/presentation/cubit/session_cubit.dart';
 import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
+import '../../../clients/domain/entities/cliente.dart';
 import '../cubit/delivery_list_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 
@@ -67,6 +68,16 @@ class _DeliveryListState extends State<DeliveryList> {
     return null;
   }
 
+  String _nomeCliente(Entrega entrega, Map<String, Cliente> clientes) {
+    return clientes[entrega.idCliente]?.nome ?? entrega.nomeCliente;
+  }
+
+  String _cidadeCliente(Entrega entrega, Map<String, Cliente> clientes) {
+    return clientes[entrega.idCliente]?.endereco.cidade ??
+        entrega.cidadeCliente;
+  }
+
+
   Future<void> _abrirDetalhe(Entrega entrega) async {
     if (_selectedEntregaId != null) return;
     setState(() => _selectedEntregaId = entrega.id);
@@ -107,7 +118,8 @@ class _DeliveryListState extends State<DeliveryList> {
             );
           }
 
-          final entregas = (state as DeliveryListLoaded).entregas;
+          final carregado = state as DeliveryListLoaded;
+          final entregas = carregado.entregas;
 
           if (entregas.isEmpty) {
             return const Center(child: Text("Nenhuma entrega registrada"));
@@ -198,7 +210,10 @@ class _DeliveryListState extends State<DeliveryList> {
                       duration: const Duration(milliseconds: 180),
                       alignment: Alignment.topCenter,
                       child: expandido
-                          ? _buildEntregasPorMotorista(dia.entregas)
+                          ? _buildEntregasPorMotorista(
+                              dia.entregas,
+                              carregado.clientes,
+                            )
                           : const SizedBox(width: double.infinity),
                     ),
                   ],
@@ -211,7 +226,10 @@ class _DeliveryListState extends State<DeliveryList> {
     );
   }
 
-  Widget _buildEntregasPorMotorista(List<Entrega> entregas) {
+  Widget _buildEntregasPorMotorista(
+    List<Entrega> entregas,
+    Map<String, Cliente> clientes,
+  ) {
     final agrupado = <String, _EntregasMotorista>{};
     for (final entrega in entregas) {
       final motorista = agrupado.putIfAbsent(
@@ -274,7 +292,7 @@ class _DeliveryListState extends State<DeliveryList> {
             ),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
-              child: _buildTabelaEntregas(motorista.entregas),
+              child: _buildTabelaEntregas(motorista.entregas, clientes),
             ),
             const Divider(height: 1),
           ],
@@ -283,7 +301,10 @@ class _DeliveryListState extends State<DeliveryList> {
     );
   }
 
-  DataTable _buildTabelaEntregas(List<Entrega> entregas) {
+  DataTable _buildTabelaEntregas(
+    List<Entrega> entregas,
+    Map<String, Cliente> clientes,
+  ) {
     return DataTable(
       showCheckboxColumn: false,
       headingRowColor: const WidgetStatePropertyAll(Color(0xFFF5F5F5)),
@@ -331,7 +352,7 @@ class _DeliveryListState extends State<DeliveryList> {
               ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 180),
                 child: Text(
-                  entrega.nomeCliente,
+                  _nomeCliente(entrega, clientes),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -348,7 +369,7 @@ class _DeliveryListState extends State<DeliveryList> {
               ),
             ),
             DataCell(Text(entrega.formaPagamento)),
-            DataCell(Text(entrega.cidadeCliente)),
+            DataCell(Text(_cidadeCliente(entrega, clientes))),
             DataCell(
               Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
             ),

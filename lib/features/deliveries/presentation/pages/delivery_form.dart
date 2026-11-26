@@ -103,7 +103,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
     return BlocProvider<DeliveryFormCubit>(
       create: (_) =>
           getIt<DeliveryFormCubit>()
-            ..carregarDados(usuario, incluirClientes: widget.entrega == null),
+            ..carregarDados(usuario),
       child: BlocConsumer<DeliveryFormCubit, DeliveryFormState>(
         listener: (context, state) {
           if (state is DeliveryFormLoaded) {
@@ -214,7 +214,6 @@ class _DeliveryFormState extends State<DeliveryForm> {
                             onPressed: () {
                               context.read<DeliveryFormCubit>().carregarDados(
                                 usuario,
-                                incluirClientes: widget.entrega == null,
                               );
                             },
                             child: const Text('Tentar novamente'),
@@ -513,6 +512,18 @@ class _DeliveryFormState extends State<DeliveryForm> {
     return double.tryParse(texto.trim().replaceAll(',', '.'));
   }
 
+  String _rotuloCliente(Entrega entrega) {
+    final encontrados = _clientesCarregados.where(
+      (cliente) => cliente.id == entrega.idCliente,
+    );
+    if (encontrados.isEmpty) {
+      // Cliente não encontrado na lista: usa o nome e a cidade salvos na entrega
+      return '${entrega.nomeCliente} - ${entrega.cidadeCliente}';
+    }
+    final cliente = encontrados.first;
+    return '${cliente.nome} - ${cliente.endereco.cidade}';
+  }
+
   Widget _campoCliente(Entrega entrega) {
     return Container(
       decoration: BoxDecoration(
@@ -547,7 +558,7 @@ class _DeliveryFormState extends State<DeliveryForm> {
         child: Align(
           alignment: Alignment.centerLeft,
           child: Text(
-            '${entrega.nomeCliente} - ${entrega.cidadeCliente}',
+            _rotuloCliente(entrega),
             style: const TextStyle(fontSize: 16),
           ),
         ),

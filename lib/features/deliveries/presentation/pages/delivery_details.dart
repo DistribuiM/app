@@ -191,7 +191,7 @@ class EntregaPage extends StatelessWidget {
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  entrega.nomeCliente,
+                  estado.cliente?.nome ?? entrega.nomeCliente,
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
@@ -204,7 +204,10 @@ class EntregaPage extends StatelessWidget {
           ),
           const SizedBox(height: 20),
           const _Label(text: 'Cidade'),
-          Text(entrega.cidadeCliente, style: const TextStyle(fontSize: 16)),
+          Text(
+            estado.cliente?.endereco.cidade ?? entrega.cidadeCliente,
+            style: const TextStyle(fontSize: 16),
+          ),
           const Divider(),
           const SizedBox(height: 12),
           const _Label(text: 'Data da Entrega'),
