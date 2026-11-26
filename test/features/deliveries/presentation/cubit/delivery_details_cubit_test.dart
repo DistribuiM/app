@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_distribuim/core/error/failures.dart';
+import 'package:app_distribuim/features/clients/domain/repositories/client_repository.dart';
 import 'package:app_distribuim/features/deliveries/domain/entities/entrega.dart';
 import 'package:app_distribuim/features/deliveries/domain/repositories/delivery_repository.dart';
 import 'package:app_distribuim/features/deliveries/presentation/cubit/delivery_details_cubit.dart';
@@ -11,8 +12,11 @@ import 'package:mocktail/mocktail.dart';
 
 class MockDeliveryRepository extends Mock implements DeliveryRepository {}
 
+class MockClientRepository extends Mock implements ClientRepository {}
+
 void main() {
   late MockDeliveryRepository deliveryRepository;
+  late MockClientRepository clientRepository;
   late StreamController<Entrega?> controller;
   late StreamController<Entrega?> replacementController;
   final inicial = Entrega(
@@ -52,8 +56,12 @@ void main() {
 
   setUp(() {
     deliveryRepository = MockDeliveryRepository();
+    clientRepository = MockClientRepository();
     controller = StreamController<Entrega?>.broadcast();
     replacementController = StreamController<Entrega?>.broadcast();
+    when(
+      () => clientRepository.buscarCliente(any()),
+    ).thenAnswer((_) async => null);
   });
 
   tearDown(() async {
@@ -71,7 +79,7 @@ void main() {
       when(
         () => deliveryRepository.ouvirEntrega(inicial.id),
       ).thenAnswer((_) => controller.stream);
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) => cubit.ouvirEntrega(inicial),
     expect: () => [DeliveryDetailsLoaded(inicial)],
@@ -83,7 +91,7 @@ void main() {
       when(
         () => deliveryRepository.ouvirEntrega(inicial.id),
       ).thenAnswer((_) => controller.stream);
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) async {
       cubit.ouvirEntrega(inicial);
@@ -99,7 +107,7 @@ void main() {
       when(
         () => deliveryRepository.ouvirEntrega(inicial.id),
       ).thenAnswer((_) => controller.stream);
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) async {
       cubit.ouvirEntrega(inicial);
@@ -115,7 +123,7 @@ void main() {
       when(
         () => deliveryRepository.ouvirEntrega(inicial.id),
       ).thenAnswer((_) => controller.stream);
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) async {
       cubit.ouvirEntrega(inicial);
@@ -134,7 +142,7 @@ void main() {
       when(
         () => deliveryRepository.ouvirEntrega(inicial.id),
       ).thenAnswer((_) => controller.stream);
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) async {
       cubit.ouvirEntrega(inicial);
@@ -155,7 +163,7 @@ void main() {
         calls++;
         return calls == 1 ? controller.stream : replacementController.stream;
       });
-      return DeliveryDetailsCubit(deliveryRepository);
+      return DeliveryDetailsCubit(deliveryRepository, clientRepository);
     },
     act: (cubit) async {
       cubit.ouvirEntrega(inicial);
@@ -172,7 +180,7 @@ void main() {
     when(
       () => deliveryRepository.ouvirEntrega(inicial.id),
     ).thenAnswer((_) => controller.stream);
-    final cubit = DeliveryDetailsCubit(deliveryRepository);
+    final cubit = DeliveryDetailsCubit(deliveryRepository, clientRepository);
 
     cubit.ouvirEntrega(inicial);
     expect(controller.hasListener, isTrue);

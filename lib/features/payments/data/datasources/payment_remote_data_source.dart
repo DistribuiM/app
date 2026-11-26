@@ -1,8 +1,23 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 
+import '../../domain/entities/pagamento.dart';
+
 class PaymentRemoteDataSource {
   final FirebaseFirestore _db = FirebaseFirestore.instance;
+
+  Stream<List<Pagamento>> ouvirPagamentos({String? idMotorista}) {
+    final pagamentos = _db.collection('pagamentos');
+    final query = idMotorista == null
+        ? pagamentos
+        : pagamentos.where('motorista.id', isEqualTo: idMotorista);
+
+    return query.snapshots().map(
+      (snapshot) => snapshot.docs
+          .map((doc) => Pagamento.fromMap(doc.data(), doc.id))
+          .toList(),
+    );
+  }
 
   Future<void> registrarPagamento({
     required String data,
