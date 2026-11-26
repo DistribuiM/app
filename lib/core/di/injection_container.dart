@@ -26,6 +26,8 @@ import '../../features/deliveries/presentation/cubit/delivery_list_cubit.dart';
 import '../../features/payments/data/datasources/payment_remote_data_source.dart';
 import '../../features/payments/data/repositories/payment_repository_impl.dart';
 import '../../features/payments/domain/repositories/payment_repository.dart';
+import '../../features/payments/presentation/cubit/payment_delete_cubit.dart';
+import '../../features/payments/presentation/cubit/payment_details_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -146,6 +148,18 @@ void setupDependencies() {
     );
   }
 
+  if (!getIt.isRegistered<PaymentDetailsCubit>()) {
+    getIt.registerFactory<PaymentDetailsCubit>(
+      () => PaymentDetailsCubit(getIt<PaymentRepository>()),
+    );
+  }
+
+  if (!getIt.isRegistered<PaymentDeleteCubit>()) {
+    getIt.registerFactory<PaymentDeleteCubit>(
+      () => PaymentDeleteCubit(getIt<PaymentRepository>()),
+    );
+  }
+
   if (!getIt.isRegistered<DeliveryDeleteCubit>()) {
     getIt.registerFactory<DeliveryDeleteCubit>(
       () => DeliveryDeleteCubit(getIt<DeliveryRepository>()),
@@ -154,7 +168,10 @@ void setupDependencies() {
 
   if (!getIt.isRegistered<ClientDeliveriesCubit>()) {
     getIt.registerFactory<ClientDeliveriesCubit>(
-      () => ClientDeliveriesCubit(getIt<DeliveryRepository>()),
+      () => ClientDeliveriesCubit(
+        getIt<DeliveryRepository>(),
+        getIt<PaymentRepository>(),
+      ),
     );
   }
 

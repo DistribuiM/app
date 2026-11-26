@@ -144,6 +144,41 @@ class DeliveryFormCubit extends Cubit<DeliveryFormState> {
     }
   }
 
+  Future<void> atualizarPagamento({
+    required String id,
+    required String data,
+    required String idMotorista,
+    required String nomeMotorista,
+    required double valor,
+    required String formaPagamento,
+  }) async {
+    final currentState = state;
+    if (currentState is! DeliveryFormLoaded) return;
+
+    final motoristas = currentState.motoristas;
+    final clientes = currentState.clientes;
+    emit(DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes));
+
+    try {
+      await _paymentRepository.atualizarPagamento(
+        id: id,
+        data: data,
+        idMotorista: idMotorista,
+        nomeMotorista: nomeMotorista,
+        valor: valor,
+        formaPagamento: formaPagamento,
+      );
+      emit(DeliveryFormSuccess());
+    } catch (e) {
+      if (e is Failure) {
+        emit(DeliveryFormError(e.message));
+      } else {
+        emit(const DeliveryFormError('Erro inesperado. Tente novamente.'));
+      }
+      emit(DeliveryFormLoaded(motoristas: motoristas, clientes: clientes));
+    }
+  }
+
   Future<void> atualizarEntrega({
     required String id,
     required String idCliente,

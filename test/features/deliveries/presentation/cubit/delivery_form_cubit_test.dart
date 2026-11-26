@@ -903,6 +903,73 @@ void main() {
       ),
     ),
   );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarPagamento emite Submitting e Success com os valores editados',
+    build: () {
+      when(
+        () => paymentRepository.atualizarPagamento(
+          id: 'pagamento-1',
+          data: '05/11/2026',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          valor: 70,
+          formaPagamento: 'Dinheiro',
+        ),
+      ).thenAnswer((_) async {});
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+        paymentRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarPagamento,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      DeliveryFormSuccess(),
+    ],
+    verify: (_) => verify(
+      () => paymentRepository.atualizarPagamento(
+        id: 'pagamento-1',
+        data: '05/11/2026',
+        idMotorista: 'motorista-1',
+        nomeMotorista: 'Motorista',
+        valor: 70,
+        formaPagamento: 'Dinheiro',
+      ),
+    ).called(1),
+  );
+
+  blocTest<DeliveryFormCubit, DeliveryFormState>(
+    'atualizarPagamento preserva Failure e retorna a Loaded',
+    build: () {
+      when(
+        () => paymentRepository.atualizarPagamento(
+          id: 'pagamento-1',
+          data: '05/11/2026',
+          idMotorista: 'motorista-1',
+          nomeMotorista: 'Motorista',
+          valor: 70,
+          formaPagamento: 'Dinheiro',
+        ),
+      ).thenThrow(const ServerFailure('msg'));
+      return DeliveryFormCubit(
+        deliveryRepository,
+        clientRepository,
+        usuarioRepository,
+        paymentRepository,
+      );
+    },
+    seed: () => DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    act: _atualizarPagamento,
+    expect: () => [
+      DeliveryFormSubmitting(motoristas: motoristas, clientes: clientes),
+      const DeliveryFormError('msg'),
+      DeliveryFormLoaded(motoristas: motoristas, clientes: clientes),
+    ],
+  );
 }
 
 Future<void> _registrarPagamento(DeliveryFormCubit cubit) {
@@ -932,5 +999,16 @@ Future<void> _atualizarEntrega(DeliveryFormCubit cubit) {
     formaPagamento: 'Pix',
     pago: false,
     observacao: 'Revisada',
+  );
+}
+
+Future<void> _atualizarPagamento(DeliveryFormCubit cubit) {
+  return cubit.atualizarPagamento(
+    id: 'pagamento-1',
+    data: '05/11/2026',
+    idMotorista: 'motorista-1',
+    nomeMotorista: 'Motorista',
+    valor: 70,
+    formaPagamento: 'Dinheiro',
   );
 }
