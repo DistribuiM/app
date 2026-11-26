@@ -10,10 +10,10 @@ import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/entrega.dart';
 import '../../../clients/domain/entities/cliente.dart';
 import '../../domain/entities/filtros_entrega.dart';
-import '../../../payments/domain/entities/pagamento.dart';
 import '../cubit/delivery_list_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 import '../widgets/delivery_filters_sheet.dart';
+import '../../../payments/domain/entities/pagamento.dart';
 
 class DeliveryList extends StatefulWidget {
   const DeliveryList({super.key});
@@ -23,7 +23,7 @@ class DeliveryList extends StatefulWidget {
 }
 
 class DeliveryListPageState extends State<DeliveryList> {
-  String? _selectedEntregaId;
+  String? _selectedRegistroKey;
   final Set<String> _diasExpandidos = {};
   DeliveryListCubit? _deliveryListCubit;
 
@@ -99,15 +99,35 @@ class DeliveryListPageState extends State<DeliveryList> {
   }
 
   Future<void> _abrirDetalhe(Entrega entrega) async {
-    if (_selectedEntregaId != null) return;
-    setState(() => _selectedEntregaId = entrega.id);
+    await _abrirRegistro(
+      chave: 'entrega:${entrega.id}',
+      rota: '/deliveries/${entrega.id}',
+      extra: entrega,
+    );
+  }
+
+  Future<void> _abrirDetalhePagamento(Pagamento pagamento) async {
+    await _abrirRegistro(
+      chave: 'pagamento:${pagamento.id}',
+      rota: '/payments/${pagamento.id}',
+      extra: pagamento,
+    );
+  }
+
+  Future<void> _abrirRegistro({
+    required String chave,
+    required String rota,
+    required Object extra,
+  }) async {
+    if (_selectedRegistroKey != null) return;
+    setState(() => _selectedRegistroKey = chave);
     await Future<void>.delayed(const Duration(milliseconds: 200));
     if (!mounted) return;
 
-    await context.push('/deliveries/${entrega.id}', extra: entrega);
+    await context.push(rota, extra: extra);
 
     if (mounted) {
-      setState(() => _selectedEntregaId = null);
+      setState(() => _selectedRegistroKey = null);
     }
   }
 
@@ -508,16 +528,20 @@ class DeliveryListPageState extends State<DeliveryList> {
       ],
       rows: registros.map((registro) {
         final entrega = registro.entrega;
+        final pagamento = registro.pagamento;
         return DataRow(
-          selected: entrega != null && _selectedEntregaId == entrega.id,
-          color: entrega != null && _selectedEntregaId == entrega.id
+          selected: _selectedRegistroKey == registro.chave,
+          color: _selectedRegistroKey == registro.chave
               ? dataRowSelectedColor
               : dataRowPressColor,
-          onSelectChanged: entrega == null
+          onSelectChanged: entrega == null && pagamento == null
               ? null
               : (selected) {
-                  if (selected == true) {
+                  if (selected != true) return;
+                  if (entrega != null) {
                     _abrirDetalhe(entrega);
+                  } else if (pagamento != null) {
+                    _abrirDetalhePagamento(pagamento);
                   }
                 },
           cells: [
@@ -548,13 +572,7 @@ class DeliveryListPageState extends State<DeliveryList> {
             DataCell(Text(registro.formaPagamento)),
             DataCell(Text(registro.cidadeCliente)),
             DataCell(
-              entrega == null
-                  ? const SizedBox.shrink()
-                  : Icon(
-                      Icons.arrow_forward_ios,
-                      size: 16,
-                      color: Colors.grey[600],
-                    ),
+              Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey[600]),
             ),
           ],
         );
@@ -582,6 +600,7 @@ class _RegistrosMotorista {
 
 class _RegistroLista {
   const _RegistroLista({
+    required this.id,
     required this.tipo,
     required this.data,
     required this.idMotorista,
@@ -593,6 +612,7 @@ class _RegistroLista {
     required this.valorPago,
     required this.formaPagamento,
     this.entrega,
+    this.pagamento,
   });
 
   factory _RegistroLista.deEntrega(
@@ -600,6 +620,7 @@ class _RegistroLista {
     String? nomeCliente,
     String? cidadeCliente,
   }) => _RegistroLista(
+    id: entrega.id,
     tipo: 'Entrega',
     data: entrega.dataEntrega,
     idMotorista: entrega.idMotorista,
@@ -615,6 +636,7 @@ class _RegistroLista {
 
   factory _RegistroLista.dePagamento(Pagamento pagamento, {Cliente? cliente}) =>
       _RegistroLista(
+        id: pagamento.id,
         tipo: 'Pagamento',
         data: pagamento.data,
         idMotorista: pagamento.idMotorista,
@@ -625,8 +647,12 @@ class _RegistroLista {
         quantidadeSacos: null,
         valorPago: pagamento.valor,
         formaPagamento: pagamento.formaPagamento,
+        pagamento: pagamento,
       );
 
+  String get chave => '${entrega == null ? 'pagamento' : 'entrega'}:$id';
+
+  final String id;
   final String tipo;
   final String data;
   final String idMotorista;
@@ -638,4 +664,5 @@ class _RegistroLista {
   final double valorPago;
   final String formaPagamento;
   final Entrega? entrega;
+  final Pagamento? pagamento;
 }

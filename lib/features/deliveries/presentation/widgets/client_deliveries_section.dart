@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
+import 'package:intl/intl.dart';
 
 import '../../../../core/di/injection_container.dart';
 import '../../../../core/widgets/data_row_press_color.dart';
 import '../../domain/entities/entrega.dart';
+import '../../../payments/domain/entities/pagamento.dart';
 import '../cubit/client_deliveries_cubit.dart';
 import '../cubit/delivery_list_state.dart';
 
@@ -24,19 +26,51 @@ class ClientDeliveriesSection extends StatefulWidget {
 }
 
 class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
-  String? _selectedEntregaId;
+  String? _selectedRegistroKey;
 
   Future<void> _abrirDetalhe(Entrega entrega) async {
-    if (_selectedEntregaId != null) return;
-    setState(() => _selectedEntregaId = entrega.id);
+    await _abrirRegistro(
+      chave: 'entrega:${entrega.id}',
+      rota: '/deliveries/${entrega.id}',
+      extra: entrega,
+    );
+  }
+
+  Future<void> _abrirDetalhePagamento(Pagamento pagamento) async {
+    await _abrirRegistro(
+      chave: 'pagamento:${pagamento.id}',
+      rota: '/payments/${pagamento.id}',
+      extra: pagamento,
+    );
+  }
+
+  Future<void> _abrirRegistro({
+    required String chave,
+    required String rota,
+    required Object extra,
+  }) async {
+    if (_selectedRegistroKey != null) return;
+    setState(() => _selectedRegistroKey = chave);
     await Future<void>.delayed(const Duration(milliseconds: 200));
     if (!mounted) return;
 
-    await context.push('/deliveries/${entrega.id}', extra: entrega);
+    await context.push(rota, extra: extra);
 
     if (mounted) {
-      setState(() => _selectedEntregaId = null);
+      setState(() => _selectedRegistroKey = null);
     }
+  }
+
+  DateTime? _parseData(String valor) {
+    for (final formato in ['dd/MM/yyyy', 'd/M/yyyy', 'yyyy-MM-dd']) {
+      try {
+        final data = DateFormat(formato).parseStrict(valor);
+        return DateTime(data.year, data.month, data.day);
+      } on FormatException {
+        continue;
+      }
+    }
+    return null;
   }
 
   @override
@@ -54,14 +88,35 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
           }
 
           if (state is DeliveryListError) {
-            return const Text(
-              "Erro ao carregar entregas",
-              style: TextStyle(color: Colors.red),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(state.message, style: const TextStyle(color: Colors.red)),
+                TextButton(
+                  onPressed: () => context
+                      .read<ClientDeliveriesCubit>()
+                      .ouvirEntregasDoCliente(widget.idCliente),
+                  child: const Text('Tentar novamente'),
+                ),
+              ],
             );
           }
 
-          final todasEntregas = (state as DeliveryListLoaded).entregas;
-          final ultimas5 = todasEntregas.take(5).toList();
+          final loaded = state as DeliveryListLoaded;
+          final registros =
+              <_RegistroCliente>[
+                ...loaded.entregas.map(_RegistroCliente.deEntrega),
+                ...loaded.pagamentos.map(_RegistroCliente.dePagamento),
+              ]..sort((a, b) {
+                final dataA = _parseData(a.data);
+                final dataB = _parseData(b.data);
+                if (dataA == null) {
+                  return dataB == null ? a.data.compareTo(b.data) : 1;
+                }
+                if (dataB == null) return -1;
+                return dataB.compareTo(dataA);
+              });
+          final ultimas5 = registros.take(5).toList();
 
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -89,7 +144,7 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                             borderRadius: BorderRadius.circular(4),
                           ),
                           child: Text(
-                            "${todasEntregas.length}",
+                            "${registros.length}",
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
@@ -105,7 +160,7 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                 child: TweenAnimationBuilder<double>(
                   tween: Tween<double>(
                     begin: 0,
-                    end: _selectedEntregaId == null ? 0 : 1,
+                    end: _selectedRegistroKey == null ? 0 : 1,
                   ),
                   duration: const Duration(milliseconds: 200),
                   builder: (context, progress, child) {
@@ -121,7 +176,7 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                         ),
                         DataColumn(
                           label: Text(
-                            "Qtd.",
+                            "Tipo / Qtd.",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
@@ -133,44 +188,67 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                         ),
                         DataColumn(
                           label: Text(
+                            "Forma",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        DataColumn(
+                          label: Text(
                             "Pendente",
                             style: TextStyle(fontWeight: FontWeight.bold),
                           ),
                         ),
                         DataColumn(label: SizedBox.shrink()),
                       ],
-                      rows: ultimas5.map((entrega) {
+                      rows: ultimas5.map((registro) {
+                        final entrega = registro.entrega;
+                        final pagamento = registro.pagamento;
+                        final selecionado =
+                            _selectedRegistroKey == registro.chave;
+                        final valorPago =
+                            entrega?.valorPago ?? pagamento!.valor;
+                        final formaPagamento =
+                            entrega?.formaPagamento ??
+                            pagamento!.formaPagamento;
+                        final corPagamento = entrega == null || entrega.pago
+                            ? Colors.green[700]
+                            : Colors.red[700];
+
                         return DataRow(
-                          selected: _selectedEntregaId == entrega.id,
-                          color: _selectedEntregaId == entrega.id
+                          selected: selecionado,
+                          color: selecionado
                               ? dataRowSelectedColor
                               : dataRowPressColor,
                           onSelectChanged: (selected) {
-                            if (selected == true) {
+                            if (selected != true) return;
+                            if (entrega != null) {
                               _abrirDetalhe(entrega);
+                            } else if (pagamento != null) {
+                              _abrirDetalhePagamento(pagamento);
                             }
                           },
                           cells: [
-                            DataCell(Text(entrega.dataEntrega)),
-                            DataCell(Text("${entrega.quantidadeSacos}")),
+                            DataCell(Text(registro.data)),
                             DataCell(
                               Text(
-                                "R\$${entrega.valorPago.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: entrega.pago
-                                      ? Colors.green[700]
-                                      : Colors.red[700],
-                                ),
+                                entrega == null
+                                    ? 'Pagamento'
+                                    : '${entrega.quantidadeSacos} sacos',
                               ),
                             ),
                             DataCell(
                               Text(
-                                "R\$${entrega.valorPendente.toStringAsFixed(2)}",
-                                style: TextStyle(
-                                  color: entrega.pago
-                                      ? Colors.green[700]
-                                      : Colors.red[700],
-                                ),
+                                "R\$${valorPago.toStringAsFixed(2)}",
+                                style: TextStyle(color: corPagamento),
+                              ),
+                            ),
+                            DataCell(Text(formaPagamento)),
+                            DataCell(
+                              Text(
+                                entrega == null
+                                    ? '—'
+                                    : "R\$${entrega.valorPendente.toStringAsFixed(2)}",
+                                style: TextStyle(color: corPagamento),
                               ),
                             ),
                             DataCell(
@@ -187,7 +265,7 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
                   },
                 ),
               ),
-              if (todasEntregas.length > 5)
+              if (registros.length > 5)
                 TextButton(
                   onPressed: () {},
                   child: Text(
@@ -204,4 +282,21 @@ class _ClientDeliveriesSectionState extends State<ClientDeliveriesSection> {
       ),
     );
   }
+}
+
+class _RegistroCliente {
+  const _RegistroCliente({required this.data, this.entrega, this.pagamento});
+
+  factory _RegistroCliente.deEntrega(Entrega entrega) =>
+      _RegistroCliente(data: entrega.dataEntrega, entrega: entrega);
+
+  factory _RegistroCliente.dePagamento(Pagamento pagamento) =>
+      _RegistroCliente(data: pagamento.data, pagamento: pagamento);
+
+  final String data;
+  final Entrega? entrega;
+  final Pagamento? pagamento;
+
+  String get chave =>
+      '${entrega == null ? 'pagamento' : 'entrega'}:${entrega?.id ?? pagamento!.id}';
 }
