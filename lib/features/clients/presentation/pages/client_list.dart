@@ -2,18 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../../core/di/injection_container.dart';
 import '../../../../core/utils/contact_launcher.dart';
-import '../../../auth/presentation/cubit/session_cubit.dart';
-import '../../../auth/presentation/cubit/session_state.dart';
 import '../../domain/entities/cliente.dart';
+import '../../../auth/domain/entities/usuario.dart';
+import '../models/cliente_filtro.dart';
 import '../cubit/client_list_cubit.dart';
 import '../cubit/client_list_state.dart';
 
 class ClientList extends StatefulWidget {
-  const ClientList({super.key, this.searchQuery = ''});
+  const ClientList({
+    super.key,
+    required this.usuario,
+    this.searchQuery = '',
+    this.filtro = const ClienteFiltro(),
+  });
 
+  final Usuario usuario;
   final String searchQuery;
+  final ClienteFiltro filtro;
 
   @override
   State<ClientList> createState() => _ClientListState();
@@ -88,15 +94,8 @@ class _ClientListState extends State<ClientList> {
 
   @override
   Widget build(BuildContext context) {
-    final sessionState = context.watch<SessionCubit>().state;
-    if (sessionState is! SessionAuthenticated) {
-      return const SizedBox.shrink();
-    }
-
-    final usuario = sessionState.usuario;
-    return BlocProvider(
-      create: (_) => getIt<ClientListCubit>()..ouvirClientes(usuario),
-      child: BlocBuilder<ClientListCubit, ClientListState>(
+    final usuario = widget.usuario;
+    return BlocBuilder<ClientListCubit, ClientListState>(
         builder: (context, state) {
           if (state is ClientListInitial || state is ClientListLoading) {
             return const Center(
@@ -129,14 +128,14 @@ class _ClientListState extends State<ClientList> {
           }
 
           final consulta = _normalizarTexto(widget.searchQuery.trim());
-          final clientes = consulta.isEmpty
-              ? state.clientes
-              : state.clientes
-                    .where(
-                      (cliente) =>
-                          _normalizarTexto(cliente.nome).contains(consulta),
-                    )
-                    .toList();
+          final clientes = state.clientes
+              .where(
+                (cliente) =>
+                    widget.filtro.aceita(cliente) &&
+                    (consulta.isEmpty ||
+                        _normalizarTexto(cliente.nome).contains(consulta)),
+              )
+              .toList();
 
           if (clientes.isEmpty) {
             return const Center(child: Text('Nenhum cliente encontrado'));
@@ -238,7 +237,6 @@ class _ClientListState extends State<ClientList> {
             }).toList(),
           );
         },
-      ),
     );
   }
 
