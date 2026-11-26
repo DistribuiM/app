@@ -13,6 +13,7 @@ import '../../../clients/presentation/pages/client_list.dart';
 import '../../../../core/widgets/custom_appbar.dart';
 import '../../../../core/widgets/custom_bottom_appbar.dart';
 import '../../../deliveries/presentation/pages/delivery_list.dart';
+import '../../../reports/presentation/pages/report_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, required this.usuario});
@@ -53,18 +54,17 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-    Future<void> _abrirFiltros(BuildContext context) async {
+  Future<void> _abrirFiltros(BuildContext context) async {
     final estado = context.read<ClientListCubit>().state;
-    final clientes = estado is ClientListLoaded
-        ? estado.clientes
-        : <Cliente>[];
+    final clientes = estado is ClientListLoaded ? estado.clientes : <Cliente>[];
 
-    final cidades = clientes
-        .map((cliente) => cliente.endereco.cidade)
-        .where((cidade) => cidade.isNotEmpty)
-        .toSet()
-        .toList()
-      ..sort();
+    final cidades =
+        clientes
+            .map((cliente) => cliente.endereco.cidade)
+            .where((cidade) => cidade.isNotEmpty)
+            .toSet()
+            .toList()
+          ..sort();
 
     final motoristas = <String, String>{};
     for (final cliente in clientes) {
@@ -164,40 +164,52 @@ class _HomePageState extends State<HomePage> {
         ),
         body: DeliveryList(key: _deliveryListKey),
       ),
+      if (widget.usuario.isAdmin)
+        TabDestination(
+          appBar: CustomAppBar(title: 'Resumo'),
+          body: ReportPage(usuario: widget.usuario),
+        ),
     ];
 
     return BlocProvider<ClientListCubit>(
       create: (_) => getIt<ClientListCubit>()..ouvirClientes(widget.usuario),
       child: ValueListenableBuilder<int>(
-      valueListenable: _selectedIndex,
-      builder: (context, index, child) {
-        final currentTab = destinations[index];
+        valueListenable: _selectedIndex,
+        builder: (context, index, child) {
+          final currentTab = destinations[index];
 
-        return Scaffold(
-          appBar: currentTab.appBar,
-          body: currentTab.body,
-          floatingActionButton: FloatingActionButton(
-            onPressed: () {
-              if (index == 0) {
-                context.push('/clients/new');
-              } else {
-                context.push('/deliveries/new');
-              }
-            },
-            tooltip: index == 0 ? 'Novo cliente' : 'Nova entrega ou pagamento',
-            child: Icon(
-              index == 0 ? Icons.person_add_alt_1 : Icons.add_shopping_cart,
+          return Scaffold(
+            appBar: currentTab.appBar,
+            body: currentTab.body,
+            floatingActionButton: index == 2
+                ? null
+                : FloatingActionButton(
+                    onPressed: () {
+                      if (index == 0) {
+                        context.push('/clients/new');
+                      } else {
+                        context.push('/deliveries/new');
+                      }
+                    },
+                    tooltip: index == 0
+                        ? 'Novo cliente'
+                        : 'Nova entrega ou pagamento',
+                    child: Icon(
+                      index == 0
+                          ? Icons.person_add_alt_1
+                          : Icons.add_shopping_cart,
+                    ),
+                  ),
+            floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+            bottomNavigationBar: CustomBottomAppBar(
+              selectedIndex: _selectedIndex,
+              fabLocation: FloatingActionButtonLocation.endFloat,
+              shape: null,
+              showAdminTab: widget.usuario.isAdmin,
             ),
-          ),
-          floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
-          bottomNavigationBar: CustomBottomAppBar(
-            selectedIndex: _selectedIndex,
-            fabLocation: FloatingActionButtonLocation.endFloat,
-            shape: null,
-          ),
-        );
-      },
-    ),
+          );
+        },
+      ),
     );
   }
 }
