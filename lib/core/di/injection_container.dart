@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:get_it/get_it.dart';
 
 import '../../features/auth/data/repositories/usuario_repository_impl.dart';
@@ -28,6 +29,10 @@ import '../../features/payments/data/repositories/payment_repository_impl.dart';
 import '../../features/payments/domain/repositories/payment_repository.dart';
 import '../../features/payments/presentation/cubit/payment_delete_cubit.dart';
 import '../../features/payments/presentation/cubit/payment_details_cubit.dart';
+import '../../features/reports/data/datasources/report_remote_data_source.dart';
+import '../../features/reports/data/repositories/report_repository_impl.dart';
+import '../../features/reports/domain/repositories/report_repository.dart';
+import '../../features/reports/presentation/cubit/report_cubit.dart';
 
 final getIt = GetIt.instance;
 
@@ -62,6 +67,12 @@ void setupDependencies() {
     );
   }
 
+  if (!getIt.isRegistered<ReportRemoteDataSource>()) {
+    getIt.registerLazySingleton<ReportRemoteDataSource>(
+      () => ReportRemoteDataSource(FirebaseFirestore.instance),
+    );
+  }
+
   if (!getIt.isRegistered<AuthRepository>()) {
     getIt.registerLazySingleton<AuthRepository>(
       () => AuthRepositoryImpl(
@@ -92,6 +103,12 @@ void setupDependencies() {
   if (!getIt.isRegistered<PaymentRepository>()) {
     getIt.registerLazySingleton<PaymentRepository>(
       () => PaymentRepositoryImpl(getIt<PaymentRemoteDataSource>()),
+    );
+  }
+
+  if (!getIt.isRegistered<ReportRepository>()) {
+    getIt.registerLazySingleton<ReportRepository>(
+      () => ReportRepositoryImpl(getIt<ReportRemoteDataSource>()),
     );
   }
 
@@ -183,6 +200,12 @@ void setupDependencies() {
         getIt<UsuarioRepository>(),
         getIt<PaymentRepository>(),
       ),
+    );
+  }
+
+  if (!getIt.isRegistered<ReportCubit>()) {
+    getIt.registerFactory<ReportCubit>(
+      () => ReportCubit(getIt<ReportRepository>()),
     );
   }
 }
